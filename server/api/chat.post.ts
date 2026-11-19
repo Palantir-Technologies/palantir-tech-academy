@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   if (apiKey && apiKey !== 'your-gemini-api-key-here') {
     try {
       const result = streamText({
-        model: google('gemini-2.0-flash'),
+        model: google('gemini-3.8-flash'),
         system: PALANTIR_ACADEMY_KNOWLEDGE,
         messages,
       })

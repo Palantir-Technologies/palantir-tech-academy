@@ -106,3 +106,10 @@ CREATE POLICY "Public Insert Leads" ON public.leads FOR INSERT WITH CHECK (true)
 
 -- Allow public read on batches to display upcoming cohorts on website
 CREATE POLICY "Public Read Batches" ON public.batches FOR SELECT USING (true);
+
+-- Grant schema and table access to anon and authenticated roles
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated;
+
