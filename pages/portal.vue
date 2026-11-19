@@ -1,253 +1,512 @@
 <template>
-  <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-8 mb-8">
-      <div>
-        <h1 class="text-3xl font-extrabold text-white tracking-tight">
-          Palantir Role-Based Management Portal
-        </h1>
-        <p class="text-xs sm:text-sm text-slate-400 mt-1">
-          Switch between Admin, Tutor, and Student workspaces to test platform operations.
-        </p>
-      </div>
+  <div class="min-h-screen bg-slate-950 bg-grid-pattern text-slate-100 pb-20">
+    <!-- Top Enterprise Dashboard Bar -->
+    <div class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-16 z-30">
+      <div class="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Breadcrumb & Workspace Status -->
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 font-bold text-sm">
+            ⚡
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-slate-400">Palantir Academy</span>
+              <span class="text-slate-600">/</span>
+              <span class="text-xs font-bold text-white uppercase tracking-wider">{{ activeRole }} Hub</span>
+            </div>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="text-[11px] text-slate-400 font-medium">Supabase Cloud Ledger Connected</span>
+            </div>
+          </div>
+        </div>
 
-      <!-- Role Switcher Tabs -->
-      <div class="flex items-center rounded-2xl border border-slate-800 bg-slate-900/90 p-1.5 shadow-lg">
-        <button
-          v-for="role in ['Admin', 'Tutor', 'Student']"
-          :key="role"
-          @click="activeRole = role"
-          :class="[
-            'rounded-xl px-4 py-2 text-xs font-bold transition-all',
-            activeRole === role
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-              : 'text-slate-400 hover:text-slate-200'
-          ]"
-        >
-          {{ role }} View
-        </button>
+        <!-- Role Workspace Switcher -->
+        <div class="flex items-center rounded-xl border border-slate-800 bg-slate-900/90 p-1 shadow-inner">
+          <button
+            v-for="role in ['Admin', 'Tutor', 'Student']"
+            :key="role"
+            @click="activeRole = role"
+            :class="[
+              'rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all flex items-center gap-2',
+              activeRole === role
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200'
+            ]"
+          >
+            <span>{{ role === 'Admin' ? '🛡️ Admin' : role === 'Tutor' ? '👨‍🏫 Tutor' : '🎓 Student' }}</span>
+            <span
+              v-if="role === 'Admin'"
+              class="rounded-full bg-indigo-950 px-1.5 py-0.2 text-[10px] text-indigo-300 font-mono"
+            >
+              {{ leads.length }}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- 1. ADMIN WORKSPACE -->
-    <!-- ========================================== -->
-    <div v-if="activeRole === 'Admin'" class="space-y-8">
-      <!-- Admin Metric Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <span class="text-xs text-slate-400">Total Inbound Leads</span>
-          <div class="text-2xl font-bold text-white mt-1">48</div>
-          <span class="text-[11px] text-emerald-400 font-medium">+14 this week via AI Chatbot</span>
-        </div>
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <span class="text-xs text-slate-400">Active Batches</span>
-          <div class="text-2xl font-bold text-indigo-400 mt-1">4 Batches</div>
-          <span class="text-[11px] text-slate-400">120 Total Enrolled Interns</span>
-        </div>
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <span class="text-xs text-slate-400">Certificates Issued</span>
-          <div class="text-2xl font-bold text-sky-400 mt-1">112</div>
-          <span class="text-[11px] text-slate-400">100% QR Verified</span>
-        </div>
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <span class="text-xs text-slate-400">University Partnerships</span>
-          <div class="text-2xl font-bold text-emerald-400 mt-1">18 Colleges</div>
-          <span class="text-[11px] text-slate-400">DTU, VIT, BITS, SRM</span>
-        </div>
-      </div>
-
-      <!-- Recent AI Chatbot Inquiries Table -->
-      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <span>🤖 Recent AI Chatbot & Website Leads</span>
-              <span class="rounded-full bg-emerald-950 border border-emerald-800 px-2 py-0.5 text-[10px] text-emerald-400 font-semibold">
-                Live Supabase Feed
-              </span>
-            </h3>
-            <p class="text-xs text-slate-400">Automated lead capture from the floating website counselor</p>
+    <div class="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8 space-y-8">
+      <!-- ============================================================ -->
+      <!-- 1. ADMIN WORKSPACE -->
+      <!-- ============================================================ -->
+      <div v-if="activeRole === 'Admin'" class="space-y-8">
+        <!-- KPI Analytics Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Total Inbound Leads</span>
+              <span class="text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full text-[10px]">+28.4%</span>
+            </div>
+            <div class="text-3xl font-extrabold text-white mt-2">{{ leads.length }}</div>
+            <p class="text-[11px] text-slate-500 mt-1">Real-time AI Chatbot capture</p>
           </div>
-          <button @click="$emit('open-enroll')" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">
-            + Manual Lead Entry
+
+          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Active Interns</span>
+              <span class="text-indigo-400 font-semibold bg-indigo-950/60 border border-indigo-800/40 px-2 py-0.5 rounded-full text-[10px]">4 Batches</span>
+            </div>
+            <div class="text-3xl font-extrabold text-indigo-400 mt-2">128</div>
+            <p class="text-[11px] text-slate-500 mt-1">Full-Stack & Applied AI Tracks</p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Verified Credentials</span>
+              <span class="text-sky-400 font-semibold bg-sky-950/60 border border-sky-800/40 px-2 py-0.5 rounded-full text-[10px]">100% QR</span>
+            </div>
+            <div class="text-3xl font-extrabold text-sky-400 mt-2">114</div>
+            <p class="text-[11px] text-slate-500 mt-1">Publicly verifiable records</p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>College MoUs</span>
+              <span class="text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full text-[10px]">18 Campus</span>
+            </div>
+            <div class="text-3xl font-extrabold text-emerald-400 mt-2">18</div>
+            <p class="text-[11px] text-slate-500 mt-1">DTU, VIT, BITS, SRM, MIT</p>
+          </div>
+        </div>
+
+        <!-- Admin Sub-Navigation Tabs -->
+        <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+          <button
+            v-for="tab in ['Inbound Leads Pipeline', 'Batches & Cohorts', 'Credential Issuer']"
+            :key="tab"
+            @click="adminTab = tab"
+            :class="[
+              'rounded-xl px-4 py-2 text-xs font-semibold transition-all',
+              adminTab === tab
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+            ]"
+          >
+            {{ tab }}
           </button>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs text-slate-300">
-            <thead class="border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-slate-950/40">
-              <tr>
-                <th class="py-3 px-3">Student Name</th>
-                <th class="py-3 px-3">College & Year</th>
-                <th class="py-3 px-3">Contact (WhatsApp / Email)</th>
-                <th class="py-3 px-3">Track & Duration</th>
-                <th class="py-3 px-3">Status</th>
-                <th class="py-3 px-3">Action</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/60">
-              <tr v-for="(lead, idx) in demoLeads" :key="idx" class="hover:bg-slate-800/30">
-                <td class="py-3 px-3 font-semibold text-white">{{ lead.name }}</td>
-                <td class="py-3 px-3">{{ lead.college }} ({{ lead.year }})</td>
-                <td class="py-3 px-3 font-mono text-[11px]">{{ lead.phone }}<br/>{{ lead.email }}</td>
-                <td class="py-3 px-3">
-                  <span class="rounded bg-slate-800 px-2 py-0.5 text-[11px] text-indigo-300 font-medium">
-                    {{ lead.track }} • {{ lead.duration }}
-                  </span>
-                </td>
-                <td class="py-3 px-3">
-                  <span class="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800/50">
-                    {{ lead.status }}
-                  </span>
-                </td>
-                <td class="py-3 px-3">
-                  <button class="text-indigo-400 hover:text-indigo-300 font-semibold">Contact on WhatsApp</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Quick Certificate Generator Form -->
-      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-4">
-        <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <span>📜 Issue Verified Industrial Certificate</span>
-        </h3>
-        <p class="text-xs text-slate-400">Generates unique ID and publishes immediately to the public verification endpoint</p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
-          <input placeholder="Student Full Name" class="rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white" />
-          <input placeholder="College / University Name" class="rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white" />
-          <input placeholder="Capstone Project Title" class="rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white" />
-        </div>
-        <div class="flex justify-end">
-          <NuxtLink to="/verify/PTA-CERT-2026-8941" class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-semibold text-white transition-colors">
-            Generate & View Sample Certificate →
-          </NuxtLink>
-        </div>
-      </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- 2. TUTOR WORKSPACE -->
-    <!-- ========================================== -->
-    <div v-else-if="activeRole === 'Tutor'" class="space-y-8">
-      <div class="rounded-2xl border border-indigo-900/40 bg-indigo-950/20 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span class="text-xs text-indigo-400 font-semibold uppercase tracking-wider">Instructor: Alex Mercer (Senior Tech Lead)</span>
-          <h2 class="text-xl font-bold text-white mt-1">Today's Live Industrial Session</h2>
-          <p class="text-xs text-slate-400">Batch: PTA-2026-FS-01 (Full-Stack Nuxt 3 & Microservices) • 6:30 PM - 8:30 PM IST</p>
-        </div>
-        <button class="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 transition-all">
-          Launch Google Meet Classroom →
-        </button>
-      </div>
-
-      <!-- Pending PR Reviews & Assignments -->
-      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-4">
-        <h3 class="text-base font-bold text-white">Pending Student GitHub PR Reviews</h3>
-        <p class="text-xs text-slate-400">Code audits required for student capstone milestone sign-off</p>
-
-        <div class="space-y-3 text-xs">
-          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <!-- TAB 1: Inbound Leads Pipeline -->
+        <div v-if="adminTab === 'Inbound Leads Pipeline'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <span class="font-semibold text-white">PR #14: Implemented Supabase RLS policies and JWT session refresh</span>
-              <p class="text-slate-400 text-[11px] mt-0.5">Submitted by: Aarav Mehta (DTU) • Milestone 3 of 6</p>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>🤖 Inbound Student Leads & Counseling Desk</span>
+              </h3>
+              <p class="text-xs text-slate-400">Leads captured live via the website AI Counselor widget</p>
             </div>
-            <div class="flex items-center gap-2">
-              <button class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 font-semibold text-white">
-                Approve & Grade (A+)
-              </button>
-              <button class="rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-1.5 font-semibold text-slate-300">
-                Request Changes
+
+            <!-- Search & Filter Controls -->
+            <div class="flex items-center gap-2.5">
+              <input
+                v-model="leadSearch"
+                placeholder="Search by student, college, phone..."
+                class="rounded-xl border border-slate-800 bg-slate-900/90 px-3.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 w-56 sm:w-64"
+              />
+              <button
+                @click="$emit('open-enroll')"
+                class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-3.5 py-1.5 text-xs font-semibold text-white whitespace-nowrap shadow-md transition-colors"
+              >
+                + New Lead
               </button>
             </div>
           </div>
 
-          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <!-- Leads Table -->
+          <div class="overflow-x-auto rounded-2xl border border-slate-800/80">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="border-b border-slate-800 bg-slate-900/80 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <tr>
+                  <th class="py-3.5 px-4">Student</th>
+                  <th class="py-3.5 px-4">College & Year</th>
+                  <th class="py-3.5 px-4">Contact</th>
+                  <th class="py-3.5 px-4">Program & Track</th>
+                  <th class="py-3.5 px-4">Status</th>
+                  <th class="py-3.5 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 bg-slate-950/40">
+                <tr v-for="(lead, i) in filteredLeads" :key="i" class="hover:bg-slate-900/40 transition-colors">
+                  <td class="py-3.5 px-4 font-semibold text-white">
+                    <div class="flex items-center gap-2">
+                      <div class="h-7 w-7 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center font-bold text-indigo-300 text-[11px]">
+                        {{ lead.name.charAt(0) }}
+                      </div>
+                      <span>{{ lead.name }}</span>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-4">
+                    <span class="text-slate-200 font-medium block">{{ lead.college }}</span>
+                    <span class="text-[11px] text-slate-500">{{ lead.year }}</span>
+                  </td>
+                  <td class="py-3.5 px-4 font-mono text-[11px]">
+                    <div class="text-indigo-300">{{ lead.phone }}</div>
+                    <div class="text-slate-400">{{ lead.email }}</div>
+                  </td>
+                  <td class="py-3.5 px-4">
+                    <span class="inline-block rounded-md bg-slate-900 border border-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-300">
+                      {{ lead.track }} • {{ lead.duration }}
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-4">
+                    <button
+                      @click="cycleLeadStatus(lead)"
+                      :class="[
+                        'rounded-full px-2.5 py-0.5 text-[10px] font-bold border transition-colors',
+                        lead.status === 'Enrolled'
+                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800/60'
+                          : lead.status === 'Contacted'
+                          ? 'bg-sky-950 text-sky-300 border-sky-800/60'
+                          : 'bg-amber-950 text-amber-300 border-amber-800/60'
+                      ]"
+                    >
+                      {{ lead.status }} ↻
+                    </button>
+                  </td>
+                  <td class="py-3.5 px-4 text-right">
+                    <a
+                      :href="`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`"
+                      target="_blank"
+                      class="inline-flex items-center gap-1 rounded-lg bg-emerald-600/20 border border-emerald-500/30 hover:bg-emerald-600/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 transition-colors"
+                    >
+                      WhatsApp
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 2: Batches & Cohorts -->
+        <div v-else-if="adminTab === 'Batches & Cohorts'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
+          <div class="flex items-center justify-between">
             <div>
-              <span class="font-semibold text-white">PR #08: Docker compose setup for PostgreSQL and Redis job queues</span>
-              <p class="text-slate-400 text-[11px] mt-0.5">Submitted by: Sneha Patel (VIT) • Milestone 4 of 6</p>
+              <h3 class="text-lg font-bold text-white">Active Cohorts & Capacity Matrix</h3>
+              <p class="text-xs text-slate-400">Monitor batch enrollment limits and assigned mentors</p>
             </div>
-            <div class="flex items-center gap-2">
-              <button class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 font-semibold text-white">
-                Approve & Grade (A)
-              </button>
-              <button class="rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-1.5 font-semibold text-slate-300">
-                Request Changes
-              </button>
+            <button class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-semibold text-white">
+              + Launch New Batch
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div v-for="(batch, idx) in demoBatches" :key="idx" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs font-bold text-indigo-400 bg-indigo-950/80 border border-indigo-800/60 px-2.5 py-1 rounded-lg">
+                  {{ batch.code }}
+                </span>
+                <span class="rounded-full bg-emerald-950 border border-emerald-800/50 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400">
+                  {{ batch.status }}
+                </span>
+              </div>
+              <div>
+                <h4 class="text-base font-bold text-white">{{ batch.track }}</h4>
+                <p class="text-xs text-slate-400 mt-0.5">Tutor: {{ batch.tutor }} • Timing: {{ batch.timing }}</p>
+              </div>
+
+              <!-- Capacity Meter -->
+              <div>
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                  <span>Enrolled Seats</span>
+                  <span class="font-bold text-white">{{ batch.enrolled }} / {{ batch.capacity }}</span>
+                </div>
+                <div class="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+                  <div
+                    class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-400"
+                    :style="{ width: `${(batch.enrolled / batch.capacity) * 100}%` }"
+                  ></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- ========================================== -->
-    <!-- 3. STUDENT WORKSPACE -->
-    <!-- ========================================== -->
-    <div v-else class="space-y-8">
-      <!-- Student Progress Header -->
-      <div class="rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-6 sm:p-8">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <!-- TAB 3: Credential Issuer -->
+        <div v-else class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-6">
           <div>
-            <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Enrolled Student: Aarav Mehta (PTA2026001)</span>
-            <h2 class="text-2xl font-bold text-white mt-1">6-Month Full-Stack Industrial Internship</h2>
-            <p class="text-xs text-slate-400 mt-0.5">College: Delhi Technological University (DTU) • 8th Semester</p>
+            <h3 class="text-lg font-bold text-white">Cryptographic Certificate Generator</h3>
+            <p class="text-xs text-slate-400">Instantly generate verifiable credentials published to the public verification endpoint</p>
           </div>
 
-          <div class="flex items-center gap-3">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Issue Form -->
+            <form @submit.prevent="generateCertificate" class="space-y-4 text-xs">
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Student Full Name</label>
+                <input v-model="newCert.student_name" required placeholder="e.g. Aarav Mehta" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
+              </div>
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">College / University</label>
+                <input v-model="newCert.college_name" required placeholder="e.g. Delhi Technological University (DTU)" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-300 font-semibold mb-1">Program Duration</label>
+                  <select v-model="newCert.duration" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white">
+                    <option value="6 Months (320 Industrial Hours)">6 Months (320 Hours)</option>
+                    <option value="3 Months (160 Industrial Hours)">3 Months (160 Hours)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-300 font-semibold mb-1">Performance Grade</label>
+                  <select v-model="newCert.grade" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white">
+                    <option value="Distinction (Grade A+)">Distinction (Grade A+)</option>
+                    <option value="Honors (Grade A)">Honors (Grade A)</option>
+                    <option value="First Class (Grade B+)">First Class (Grade B+)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Capstone Project Title</label>
+                <input v-model="newCert.capstone_project" required placeholder="e.g. Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
+              </div>
+              <button
+                type="submit"
+                class="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 py-2.5 font-bold text-white shadow-lg hover:from-indigo-500 hover:to-sky-400 transition-all"
+              >
+                Sign & Publish Certificate to Ledger →
+              </button>
+            </form>
+
+            <!-- Certificate Live Preview -->
+            <div class="rounded-2xl border-2 border-indigo-500/40 bg-gradient-to-br from-slate-900 to-indigo-950/40 p-6 flex flex-col justify-between shadow-2xl">
+              <div>
+                <div class="flex items-center justify-between text-[11px] text-slate-400">
+                  <span class="font-mono text-indigo-400">ID: PTA-CERT-2026-8941</span>
+                  <span class="text-emerald-400 font-bold">✓ VERIFIED AUTHENTIC</span>
+                </div>
+                <h4 class="text-xl font-extrabold text-white mt-4">{{ newCert.student_name || 'Student Name' }}</h4>
+                <p class="text-xs text-slate-400">{{ newCert.college_name || 'University Name' }}</p>
+
+                <div class="mt-4 pt-4 border-t border-slate-800/80 space-y-2 text-xs">
+                  <p class="text-slate-300"><strong class="text-white">Track:</strong> Full-Stack Web Engineering</p>
+                  <p class="text-slate-300"><strong class="text-white">Duration:</strong> {{ newCert.duration }}</p>
+                  <p class="text-slate-300"><strong class="text-white">Grade:</strong> {{ newCert.grade }}</p>
+                  <p class="text-slate-300"><strong class="text-white">Capstone:</strong> {{ newCert.capstone_project }}</p>
+                </div>
+              </div>
+
+              <NuxtLink
+                to="/verify/PTA-CERT-2026-8941"
+                class="mt-6 text-center rounded-xl bg-slate-800 hover:bg-slate-700 py-2 text-xs font-semibold text-sky-400 transition-colors"
+              >
+                Inspect Public Verification Portal View →
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- 2. TUTOR WORKSPACE -->
+      <!-- ============================================================ -->
+      <div v-else-if="activeRole === 'Tutor'" class="space-y-8">
+        <!-- Live Classroom Card -->
+        <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div>
+            <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-950 border border-emerald-800/60 px-3 py-1 text-xs font-bold text-emerald-400 mb-2">
+              <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>LIVE INDUSTRIAL CLASSROOM READY</span>
+            </div>
+            <h2 class="text-2xl font-extrabold text-white">Cohort: PTA-2026-FS-01</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
+              Today's Session: <strong>Building Real-Time Microservice Event Buses with Nuxt Nitro & Redis BullMQ</strong>.
+            </p>
+            <span class="text-xs text-slate-400 block mt-2">Scheduled: 6:30 PM - 8:30 PM IST • Mentor: Alex Mercer</span>
+          </div>
+
+          <button class="whitespace-nowrap rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 px-6 py-3.5 text-xs sm:text-sm font-bold text-white shadow-xl shadow-emerald-600/30 transition-all hover:scale-105">
+            Launch Google Meet Studio →
+          </button>
+        </div>
+
+        <!-- Attendance & Code Review Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Daily Attendance Register -->
+          <div class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-base font-bold text-white">Daily Attendance Register</h3>
+                <p class="text-xs text-slate-400">Click avatar to toggle Present/Absent</p>
+              </div>
+              <span class="text-xs font-semibold text-emerald-400">Average: 92%</span>
+            </div>
+
+            <div class="space-y-2.5">
+              <div
+                v-for="(student, idx) in demoStudents"
+                :key="idx"
+                class="rounded-xl border border-slate-800/80 bg-slate-900/50 p-3 flex items-center justify-between text-xs"
+              >
+                <div class="flex items-center gap-3">
+                  <button
+                    @click="student.present = !student.present"
+                    :class="[
+                      'h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors',
+                      student.present ? 'bg-emerald-600 text-white' : 'bg-red-950 text-red-400 border border-red-800'
+                    ]"
+                  >
+                    {{ student.present ? '✓' : '✕' }}
+                  </button>
+                  <div>
+                    <span class="font-semibold text-white block">{{ student.name }}</span>
+                    <span class="text-[11px] text-slate-400">{{ student.college }}</span>
+                  </div>
+                </div>
+                <span class="font-mono text-xs font-semibold text-slate-300">{{ student.attendance }}% Attended</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending PR Reviews -->
+          <div class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-4">
+            <h3 class="text-base font-bold text-white">Capstone GitHub PR Code Audits</h3>
+            <p class="text-xs text-slate-400">Review student implementations before granting milestone passes</p>
+
+            <div class="space-y-3 text-xs">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-white">PR #18: Supabase RLS policies and JWT session refresh</span>
+                  <span class="rounded bg-indigo-950 text-indigo-300 px-2 py-0.5 text-[10px] font-mono">Aarav Mehta</span>
+                </div>
+                <p class="text-slate-400 text-xs">Fixed memory leaks in SSE data streaming channel and implemented multi-role route guards.</p>
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                  <button class="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 font-bold text-white transition-colors">
+                    Approve (Grade A+)
+                  </button>
+                  <button class="rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-1.5 font-semibold text-slate-300">
+                    Request Revisions
+                  </button>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-white">PR #12: Docker compose & Redis BullMQ background workers</span>
+                  <span class="rounded bg-indigo-950 text-indigo-300 px-2 py-0.5 text-[10px] font-mono">Sneha Patel</span>
+                </div>
+                <p class="text-slate-400 text-xs">Configured containerized worker nodes and production health checks.</p>
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                  <button class="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 font-bold text-white transition-colors">
+                    Approve (Grade A)
+                  </button>
+                  <button class="rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-1.5 font-semibold text-slate-300">
+                    Request Revisions
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- 3. STUDENT WORKSPACE -->
+      <!-- ============================================================ -->
+      <div v-else class="space-y-8">
+        <!-- Student Identity & Progress Header -->
+        <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Intern ID: PTA2026001</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1">Aarav Mehta</h2>
+            <p class="text-xs sm:text-sm text-slate-300 mt-0.5">
+              Delhi Technological University (DTU) • 8th Semester • 6-Month Industrial Track
+            </p>
+          </div>
+
+          <!-- Progress Ring & Cert Link -->
+          <div class="flex items-center gap-4">
+            <div class="text-right">
+              <span class="text-xs text-slate-400 block">Industrial Completion</span>
+              <span class="text-xl font-extrabold text-emerald-400">85% Viva-Ready</span>
+            </div>
             <NuxtLink
               to="/verify/PTA-CERT-2026-8941"
-              class="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-400 transition-all"
+              class="rounded-2xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-xl shadow-indigo-600/30 transition-all hover:scale-105"
             >
               View Official Certificate 🏆
             </NuxtLink>
           </div>
         </div>
 
-        <!-- Progress Tracker Bar -->
-        <div class="mt-6 pt-6 border-t border-slate-800/80">
-          <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
-            <span>Overall Industrial Training Completion</span>
-            <span class="font-bold text-indigo-400">85% (Ready for Viva)</span>
-          </div>
-          <div class="h-2.5 w-full rounded-full bg-slate-800 overflow-hidden">
-            <div class="h-full bg-gradient-to-r from-indigo-500 to-sky-400 rounded-full w-[85%]"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- University Project Kit Download Cards -->
-      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-base font-bold text-white">📁 Final University Semester Documentation Kit</h3>
-            <p class="text-xs text-slate-400">Pre-approved templates for college viva, internal guides, and project defense</p>
+        <!-- 6-Phase Curriculum Roadmap Stepper -->
+        <div class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-4">
+          <h3 class="text-base font-bold text-white">Industrial Curriculum Roadmap</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+            <div v-for="(step, idx) in studentRoadmap" :key="idx" class="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[10px] text-slate-500">W{{ step.weeks }}</span>
+                <span :class="step.done ? 'text-emerald-400' : 'text-indigo-400'">{{ step.done ? '✓' : '●' }}</span>
+              </div>
+              <h5 class="font-bold text-white text-xs mt-1">{{ step.title }}</h5>
+              <p class="text-[10px] text-slate-400 leading-tight">{{ step.desc }}</p>
+            </div>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div class="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2">
-            <span class="text-xl">📄</span>
-            <h4 class="font-bold text-white">Project Report (IEEE Format)</h4>
-            <p class="text-[11px] text-slate-400">60-page pre-written technical document with ER diagrams & code snippets.</p>
-            <button class="text-indigo-400 font-semibold hover:text-indigo-300 block pt-1">Download DOCX ↓</button>
+        <!-- University Submission Dossier Center -->
+        <div class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span>📁 University Semester Documentation Kit</span>
+                <span class="rounded-full bg-emerald-950 border border-emerald-800 px-2 py-0.5 text-[10px] text-emerald-400 font-semibold">
+                  100% University Compliant
+                </span>
+              </h3>
+              <p class="text-xs text-slate-400">Pre-approved deliverables ready for external college examiners and guide signatures</p>
+            </div>
           </div>
 
-          <div class="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2">
-            <span class="text-xl">📊</span>
-            <h4 class="font-bold text-white">Viva Presentation Deck</h4>
-            <p class="text-[11px] text-slate-400">18-slide architecture walkthrough designed for college external examiners.</p>
-            <button class="text-indigo-400 font-semibold hover:text-indigo-300 block pt-1">Download PPTX ↓</button>
-          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3 hover:border-slate-700 transition-colors">
+              <div class="h-10 w-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-lg">📄</div>
+              <div>
+                <h4 class="font-bold text-white text-sm">IEEE Project Report (DOCX)</h4>
+                <p class="text-[11px] text-slate-400 mt-1">60-page pre-written academic thesis with ER diagrams, sequence flows, and verified source code.</p>
+              </div>
+              <button class="text-xs text-indigo-400 font-bold hover:text-indigo-300 block pt-1">Download DOCX File ↓</button>
+            </div>
 
-          <div class="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2">
-            <span class="text-xl">🛡️</span>
-            <h4 class="font-bold text-white">Industrial Training NOC & LOR</h4>
-            <p class="text-[11px] text-slate-400">Official company seal letter confirming 320 hours completed.</p>
-            <button class="text-indigo-400 font-semibold hover:text-indigo-300 block pt-1">Download PDF ↓</button>
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3 hover:border-slate-700 transition-colors">
+              <div class="h-10 w-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-lg">📊</div>
+              <div>
+                <h4 class="font-bold text-white text-sm">Viva Presentation (PPTX)</h4>
+                <p class="text-[11px] text-slate-400 mt-1">18-slide architectural walkthrough customized for college external viva defenses.</p>
+              </div>
+              <button class="text-xs text-sky-400 font-bold hover:text-sky-300 block pt-1">Download PPTX Deck ↓</button>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3 hover:border-slate-700 transition-colors">
+              <div class="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">🛡️</div>
+              <div>
+                <h4 class="font-bold text-white text-sm">Industrial NOC & LOR Letter</h4>
+                <p class="text-[11px] text-slate-400 mt-1">Official Palantir Tech Academy seal letter certifying 320 completed industrial training hours.</p>
+              </div>
+              <button class="text-xs text-emerald-400 font-bold hover:text-emerald-300 block pt-1">Download PDF Letter ↓</button>
+            </div>
           </div>
         </div>
       </div>
@@ -256,43 +515,130 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 defineEmits(['open-enroll'])
 
 const activeRole = ref('Admin')
+const adminTab = ref('Inbound Leads Pipeline')
+const leadSearch = ref('')
 
-const demoLeads = [
+const leads = ref([
   {
     name: 'Rohan Verma',
     college: 'VIT Vellore',
-    year: '3rd Year',
+    year: '3rd Year CSE',
     phone: '+91 9876543210',
     email: 'rohan.verma@vit.ac.in',
-    track: 'Full-Stack Web (Nuxt/Node)',
+    track: 'Full-Stack Web',
     duration: '6 Months',
     status: 'New'
   },
   {
     name: 'Ananya Deshmukh',
     college: 'BITS Pilani',
-    year: '4th Year',
+    year: '4th Year CS',
     phone: '+91 9811223344',
     email: 'ananya@pilani.bits.ac.in',
-    track: 'Applied AI & GenAI Systems',
+    track: 'Applied AI & GenAI',
     duration: '6 Months',
     status: 'Contacted'
   },
   {
     name: 'Kabir Singh',
     college: 'Delhi Technological Univ (DTU)',
-    year: '2nd Year',
+    year: '2nd Year IT',
     phone: '+91 9988776655',
     email: 'kabir@dtu.ac.in',
-    track: 'Full-Stack Web (Nuxt/Node)',
+    track: 'Full-Stack Web',
     duration: '3 Months',
+    status: 'Enrolled'
+  },
+  {
+    name: 'Pooja Iyer',
+    college: 'SRM Institute Chennai',
+    year: '3rd Year CSE',
+    phone: '+91 9844556677',
+    email: 'pooja.i@srmist.edu.in',
+    track: 'Applied AI & GenAI',
+    duration: '6 Months',
     status: 'New'
   }
+])
+
+const filteredLeads = computed(() => {
+  if (!leadSearch.value.trim()) return leads.value
+  const q = leadSearch.value.toLowerCase()
+  return leads.value.filter(
+    (l) =>
+      l.name.toLowerCase().includes(q) ||
+      l.college.toLowerCase().includes(q) ||
+      l.phone.includes(q) ||
+      l.track.toLowerCase().includes(q)
+  )
+})
+
+const cycleLeadStatus = (lead) => {
+  if (lead.status === 'New') lead.status = 'Contacted'
+  else if (lead.status === 'Contacted') lead.status = 'Enrolled'
+  else lead.status = 'New'
+}
+
+const demoBatches = [
+  {
+    code: 'PTA-2026-FS-01',
+    track: 'Full-Stack Web Engineering (Nuxt 3 & Node)',
+    tutor: 'Alex Mercer (Senior Tech Lead)',
+    timing: '6:30 PM - 8:30 PM IST',
+    enrolled: 32,
+    capacity: 35,
+    status: 'Ongoing'
+  },
+  {
+    code: 'PTA-2026-AI-01',
+    track: 'Applied AI & Generative AI Systems',
+    tutor: 'Dr. Sophia Vance (AI Scientist)',
+    timing: '7:00 PM - 9:00 PM IST',
+    enrolled: 28,
+    capacity: 30,
+    status: 'Ongoing'
+  },
+  {
+    code: 'PTA-2026-FS-02',
+    track: 'Full-Stack Fast-Track (Summer Cohort)',
+    tutor: 'David Chen (DevOps Architect)',
+    timing: '10:00 AM - 1:00 PM IST (Weekends)',
+    enrolled: 18,
+    capacity: 30,
+    status: 'Upcoming'
+  }
+]
+
+const newCert = ref({
+  student_name: 'Aarav Mehta',
+  college_name: 'Delhi Technological University (DTU)',
+  duration: '6 Months (320 Industrial Hours)',
+  grade: 'Distinction (Grade A+)',
+  capstone_project: 'Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase'
+})
+
+const generateCertificate = () => {
+  alert(`Certificate generated and registered for ${newCert.value.student_name}!`)
+}
+
+const demoStudents = ref([
+  { name: 'Aarav Mehta', college: 'DTU (8th Sem)', attendance: 96, present: true },
+  { name: 'Sneha Patel', college: 'VIT Vellore (7th Sem)', attendance: 92, present: true },
+  { name: 'Karthik Rao', college: 'BITS Pilani (8th Sem)', attendance: 88, present: true },
+  { name: 'Simran Kaur', college: 'Thapar University (8th Sem)', attendance: 84, present: false }
+])
+
+const studentRoadmap = [
+  { weeks: '1-4', title: 'ESNext & TS Architecture', desc: 'Interfaces, async queues, design patterns', done: true },
+  { weeks: '5-8', title: 'Vue 3 & Nuxt 3 SSR', desc: 'Nitro engines, state stores, Tailwind', done: true },
+  { weeks: '9-12', title: 'PostgreSQL & Supabase', desc: 'RLS security, migrations, auth tokens', done: true },
+  { weeks: '13-16', title: 'DevOps & CI/CD', desc: 'Docker Compose, GitHub Actions, Vercel', done: true },
+  { weeks: '17-20', title: 'Live Client Capstone', desc: 'Multi-tenant architecture & billing', done: false },
+  { weeks: '21-24', title: 'College Viva & Demo Day', desc: 'IEEE project thesis, mentor defense', done: false }
 ]
 </script>
-
