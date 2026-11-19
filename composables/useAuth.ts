@@ -153,7 +153,28 @@ export const useAuth = () => {
         enrolled_track: 'Full-Stack Web Engineering (6 Months)',
         enrollment_no: 'PTA2026001',
         attendance: 94,
-        grade: 'Distinction (A+)'
+        grade: 'Distinction (A+)',
+        role: 'student'
+      }
+    }
+    isAuthModalOpen.value = false
+  }
+
+  // Quick Super Admin Login (Master Control)
+  const loginAsSuperAdmin = () => {
+    user.value = {
+      id: 'super-admin-master-001',
+      email: 'extractionevolution@gmail.com',
+      user_metadata: {
+        full_name: 'Chief Super Admin (Palantir)',
+        role: 'super_admin',
+        permissions: {
+          can_grade: true,
+          can_issue_cert: true,
+          can_view_leads: true,
+          can_hire: true,
+          can_manage_users: true
+        }
       }
     }
     isAuthModalOpen.value = false
@@ -170,6 +191,8 @@ export const useAuth = () => {
     signUpWithEmail,
     signInWithGoogle,
     signOut,
-    loginAsDemoStudent
+    loginAsDemoStudent,
+    loginAsSuperAdmin
   }
 }
+

@@ -117,3 +117,4 @@ const emiAmount = computed(() => {
   return Math.round(finalFee.value / 3)
 })
 </script>
+

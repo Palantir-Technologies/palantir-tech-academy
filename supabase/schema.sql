@@ -18,7 +18,23 @@ CREATE TABLE IF NOT EXISTS public.leads (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. BATCHES TABLE (Managed by Admin)
+-- 2. USER PROFILES & SUPER ADMIN RBAC TABLE (Super Admin User Management)
+CREATE TABLE IF NOT EXISTS public.user_profiles (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    auth_id UUID,
+    email TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL,
+    role TEXT DEFAULT 'student' CHECK (role IN ('super_admin', 'admin', 'tutor', 'developer', 'employer', 'student')),
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'paused', 'suspended')),
+    college_name TEXT,
+    hired_status TEXT DEFAULT 'not_hired' CHECK (hired_status IN ('not_hired', 'in_interview', 'hired_internal_developer', 'placed_partner_employer')),
+    salary_or_stipend TEXT,
+    assigned_batch TEXT,
+    permissions JSONB DEFAULT '{"can_grade": false, "can_issue_cert": false, "can_view_leads": false, "can_hire": false, "can_manage_users": false}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 3. BATCHES TABLE (Managed by Admin & Tutors)
 CREATE TABLE IF NOT EXISTS public.batches (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     batch_code TEXT UNIQUE NOT NULL, -- e.g., 'PTA-2026-FS-01'
@@ -33,7 +49,7 @@ CREATE TABLE IF NOT EXISTS public.batches (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. STUDENTS TABLE (Enrolled College Interns)
+-- 4. STUDENTS TABLE (Enrolled College Interns)
 CREATE TABLE IF NOT EXISTS public.students (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     enrollment_no TEXT UNIQUE NOT NULL, -- e.g., 'PTA2026001'
@@ -47,11 +63,11 @@ CREATE TABLE IF NOT EXISTS public.students (
     github_repo_url TEXT,
     live_project_url TEXT,
     grade TEXT DEFAULT 'A',
-    status TEXT DEFAULT 'Active' CHECK (status IN ('Active', 'Graduated', 'Dropped')),
+    status TEXT DEFAULT 'Active' CHECK (status IN ('Active', 'Graduated', 'Dropped', 'Hired')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. CERTIFICATES TABLE (Public Verification Engine)
+-- 5. CERTIFICATES TABLE (Public Verification Engine)
 CREATE TABLE IF NOT EXISTS public.certificates (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     certificate_id TEXT UNIQUE NOT NULL, -- e.g., 'PTA-CERT-2026-8941'
@@ -70,8 +86,33 @@ CREATE TABLE IF NOT EXISTS public.certificates (
 );
 
 -- =========================================================
--- SEED DEMO DATA FOR IMMEDIATE TESTING
+-- SEED INITIAL SUPER ADMIN & DEMO STAFF DATA
 -- =========================================================
+
+-- Insert Super Admin (Master Account)
+INSERT INTO public.user_profiles (email, full_name, role, status, permissions)
+VALUES 
+('extractionevolution@gmail.com', 'Chief Super Admin (Palantir)', 'super_admin', 'active', '{"can_grade": true, "can_issue_cert": true, "can_view_leads": true, "can_hire": true, "can_manage_users": true}'::jsonb)
+ON CONFLICT (email) DO NOTHING;
+
+-- Insert Sample Tutor with Custom Powers
+INSERT INTO public.user_profiles (email, full_name, role, status, assigned_batch, permissions)
+VALUES 
+('alex.mercer@palantir.academy', 'Alex Mercer', 'tutor', 'active', 'PTA-2026-FS-01', '{"can_grade": true, "can_issue_cert": false, "can_view_leads": false, "can_hire": false, "can_manage_users": false}'::jsonb),
+('sophia.vance@palantir.academy', 'Dr. Sophia Vance', 'tutor', 'active', 'PTA-2026-AI-01', '{"can_grade": true, "can_issue_cert": false, "can_view_leads": false, "can_hire": false, "can_manage_users": false}'::jsonb)
+ON CONFLICT (email) DO NOTHING;
+
+-- Insert Student Promoted to Internal Junior Developer
+INSERT INTO public.user_profiles (email, full_name, role, status, college_name, hired_status, salary_or_stipend, permissions)
+VALUES 
+('aarav.mehta@dtu.ac.in', 'Aarav Mehta', 'developer', 'active', 'DTU (8th Sem)', 'hired_internal_developer', '₹45,000/month', '{"can_grade": true, "can_issue_cert": false, "can_view_leads": false, "can_hire": false, "can_manage_users": false}'::jsonb)
+ON CONFLICT (email) DO NOTHING;
+
+-- Insert Partner Employer Account
+INSERT INTO public.user_profiles (email, full_name, role, status, permissions)
+VALUES 
+('recruiting@apexcloud.io', 'ApexCloud Hiring Partner', 'employer', 'active', '{"can_grade": false, "can_issue_cert": false, "can_view_leads": false, "can_hire": true, "can_manage_users": false}'::jsonb)
+ON CONFLICT (email) DO NOTHING;
 
 -- Insert Sample Batch
 INSERT INTO public.batches (batch_code, track_name, duration, start_date, end_date, tutor_name, timing, max_capacity, status)
@@ -80,36 +121,27 @@ VALUES
 ('PTA-2026-AI-01', 'Applied AI & Generative AI Systems', '3 Months', '2026-06-15', '2026-09-15', 'Dr. Sophia Vance (AI Scientist)', '7:00 PM - 9:00 PM IST', 30, 'Upcoming')
 ON CONFLICT (batch_code) DO NOTHING;
 
--- Insert Sample Verified Certificate (for testing /verify/[id])
+-- Insert Sample Verified Certificate
 INSERT INTO public.certificates (certificate_id, student_name, college_name, track_name, duration, completion_date, grade, capstone_project, project_url)
 VALUES 
 ('PTA-CERT-2026-8941', 'Aarav Mehta', 'Delhi Technological University (DTU)', 'Full-Stack Web Engineering', '6 Months (320 Industrial Hours)', '2026-05-15', 'Distinction (Grade A+)', 'Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase', 'https://github.com/palantir-tech/sample-capstone')
 ON CONFLICT (certificate_id) DO NOTHING;
 
--- Insert Sample Inbound Lead
-INSERT INTO public.leads (full_name, email, phone, college_name, branch, current_year, interested_track, program_duration, status, notes)
-VALUES 
-('Rohan Verma', 'rohan.verma@example.com', '+91 9876543210', 'VIT Vellore', 'Computer Science & Engineering', '3rd Year', 'Full-Stack Web (Nuxt/Node)', '6 Months', 'New', 'Wants university project NOC and syllabus breakdown.')
-ON CONFLICT DO NOTHING;
-
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.batches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read on certificates for verification portal
 CREATE POLICY "Public Read Certificates" ON public.certificates FOR SELECT USING (true);
-
--- Allow public to insert leads from the website & chatbot
 CREATE POLICY "Public Insert Leads" ON public.leads FOR INSERT WITH CHECK (true);
-
--- Allow public read on batches to display upcoming cohorts on website
 CREATE POLICY "Public Read Batches" ON public.batches FOR SELECT USING (true);
+CREATE POLICY "Public Read Profiles" ON public.user_profiles FOR SELECT USING (true);
 
 -- Grant schema and table access to anon and authenticated roles
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated;
-

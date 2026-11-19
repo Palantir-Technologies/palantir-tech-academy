@@ -22,24 +22,26 @@
         </div>
 
         <!-- Role Workspace Switcher -->
-        <div class="flex items-center rounded-xl border border-slate-800 bg-slate-900/90 p-1 shadow-inner">
+        <div class="flex items-center rounded-xl border border-slate-800 bg-slate-900/90 p-1 shadow-inner overflow-x-auto">
           <button
-            v-for="role in ['Admin', 'Tutor', 'Student']"
+            v-for="role in ['Super Admin', 'Admin', 'Tutor', 'Student']"
             :key="role"
             @click="activeRole = role"
             :class="[
-              'rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all flex items-center gap-2',
+              'rounded-lg px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap',
               activeRole === role
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                ? role === 'Super Admin'
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
+                  : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                 : 'text-slate-400 hover:text-slate-200'
             ]"
           >
-            <span>{{ role === 'Admin' ? '🛡️ Admin' : role === 'Tutor' ? '👨‍🏫 Tutor' : '🎓 Student' }}</span>
+            <span>{{ role === 'Super Admin' ? '👑 Super Admin' : role === 'Admin' ? '🛡️ Admin' : role === 'Tutor' ? '👨‍🏫 Tutor' : '🎓 Student' }}</span>
             <span
-              v-if="role === 'Admin'"
-              class="rounded-full bg-indigo-950 px-1.5 py-0.2 text-[10px] text-indigo-300 font-mono"
+              v-if="role === 'Super Admin'"
+              class="rounded-full bg-amber-950 border border-amber-700/60 px-1.5 text-[9px] text-amber-300 font-mono"
             >
-              {{ leads.length }}
+              Master
             </span>
           </button>
         </div>
@@ -58,51 +60,398 @@
           <div>
             <div class="flex items-center gap-2">
               <h3 class="text-base font-bold text-white">{{ user.user_metadata?.full_name || user.email?.split('@')[0] }}</h3>
-              <span class="rounded bg-emerald-950 border border-emerald-800/60 px-2 py-0.2 text-[10px] font-bold text-emerald-400">
-                Verified Intern
+              <span
+                :class="[
+                  'rounded border px-2 py-0.2 text-[10px] font-bold',
+                  user.user_metadata?.role === 'super_admin'
+                    ? 'bg-amber-950 text-amber-400 border-amber-800/60'
+                    : 'bg-emerald-950 text-emerald-400 border-emerald-800/60'
+                ]"
+              >
+                {{ user.user_metadata?.role === 'super_admin' ? '👑 Chief Super Admin' : 'Verified Intern' }}
               </span>
             </div>
             <p class="text-xs text-slate-400 mt-0.5">
-              {{ user.user_metadata?.college_name || 'Engineering University' }} • {{ user.email }}
+              {{ user.email }} • Full System Clearance
             </p>
           </div>
         </div>
 
         <div class="flex items-center gap-3">
+          <button
+            v-if="user.user_metadata?.role !== 'super_admin'"
+            @click="loginAsSuperAdmin"
+            class="rounded-xl border border-amber-500/50 bg-amber-950/40 hover:bg-amber-900/40 px-3.5 py-1.5 text-xs font-bold text-amber-300 transition-colors"
+          >
+            Switch to Super Admin Account 👑
+          </button>
           <NuxtLink
             to="/verify/PTA-CERT-2026-8941"
             class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-bold text-white transition-colors"
           >
-            Inspect Verified Credential →
+            Public Credential Registry →
           </NuxtLink>
         </div>
       </div>
 
-      <!-- If Guest / Not Logged In Notice -->
-      <div v-else class="glass-panel rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs border border-indigo-900/40">
-        <div class="flex items-center gap-2 text-slate-300">
-          <span>👋 Browsing as guest visitor. Sign in with Google or your college email to link your project submissions!</span>
+      <!-- ============================================================ -->
+      <!-- 👑 SUPER ADMIN COMMAND HUB (MASTER CONTROL) -->
+      <!-- ============================================================ -->
+      <div v-if="activeRole === 'Super Admin'" class="space-y-8">
+        <!-- Super Admin Metrics Banner -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="glass-panel rounded-2xl p-5 border border-amber-500/30 hover:border-amber-500/50 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Managed User Accounts</span>
+              <span class="text-amber-400 font-semibold bg-amber-950/60 border border-amber-800/40 px-2 py-0.5 rounded-full text-[10px]">Master Ledger</span>
+            </div>
+            <div class="text-3xl font-extrabold text-white mt-2">{{ managedUsers.length }}</div>
+            <p class="text-[11px] text-slate-400 mt-1">Students, Tutors, Developers, Employers</p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Internal Hires (Students → Devs)</span>
+              <span class="text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full text-[10px]">Hired @ Palantir</span>
+            </div>
+            <div class="text-3xl font-extrabold text-emerald-400 mt-2">
+              {{ managedUsers.filter(u => u.hired_status === 'hired_internal_developer').length }}
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Paid Junior Developer Interns</p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Active Faculty & Tutors</span>
+              <span class="text-indigo-400 font-semibold bg-indigo-950/60 border border-indigo-800/40 px-2 py-0.5 rounded-full text-[10px]">Staff</span>
+            </div>
+            <div class="text-3xl font-extrabold text-indigo-400 mt-2">
+              {{ managedUsers.filter(u => u.role === 'tutor').length }}
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Assigned with grading powers</p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Partner Employers</span>
+              <span class="text-sky-400 font-semibold bg-sky-950/60 border border-sky-800/40 px-2 py-0.5 rounded-full text-[10px]">Corporate</span>
+            </div>
+            <div class="text-3xl font-extrabold text-sky-400 mt-2">
+              {{ managedUsers.filter(u => u.role === 'employer').length }}
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Hiring access to student pool</p>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
+
+        <!-- Super Admin Sub Tabs -->
+        <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
           <button
-            @click="isAuthModalOpen = true"
-            class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-3.5 py-1.5 font-bold text-white transition-colors"
+            v-for="tab in ['User Directory & Role Hierarchy', '+ Create User / Invite Staff', 'Student Talent & Hiring Desk']"
+            :key="tab"
+            @click="superAdminTab = tab"
+            :class="[
+              'rounded-xl px-4 py-2 text-xs font-bold transition-all',
+              superAdminTab === tab
+                ? 'bg-amber-600 text-white shadow-md'
+                : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+            ]"
           >
-            Sign In / Sign Up
+            {{ tab }}
           </button>
-          <button
-            @click="loginAsDemoStudent"
-            class="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 font-semibold text-slate-300"
-          >
-            Demo Student Mode
-          </button>
+        </div>
+
+        <!-- SUBTAB 1: User Directory & Permissions Management -->
+        <div v-if="superAdminTab === 'User Directory & Role Hierarchy'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>👑 Super Admin User & Role Matrix</span>
+                <span class="rounded bg-amber-950 text-amber-400 border border-amber-800/60 px-2 py-0.2 text-[10px] font-bold">
+                  Master Privileges
+                </span>
+              </h3>
+              <p class="text-xs text-slate-400">Pause accounts, promote students to developers, or customize granular permissions</p>
+            </div>
+
+            <!-- Filter by Role -->
+            <div class="flex items-center gap-2">
+              <select
+                v-model="roleFilter"
+                class="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:outline-none"
+              >
+                <option value="all">All Roles</option>
+                <option value="student">Students</option>
+                <option value="developer">Developers</option>
+                <option value="tutor">Tutors</option>
+                <option value="employer">Employers</option>
+                <option value="admin">Admins</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Users Directory Table -->
+          <div class="overflow-x-auto rounded-2xl border border-slate-800/80">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="border-b border-slate-800 bg-slate-900/80 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <tr>
+                  <th class="py-3.5 px-4">User</th>
+                  <th class="py-3.5 px-4">Role & Placement Status</th>
+                  <th class="py-3.5 px-4">Account Status</th>
+                  <th class="py-3.5 px-4">Custom Permissions / Powers</th>
+                  <th class="py-3.5 px-4 text-right">Master Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 bg-slate-950/40">
+                <tr v-for="(u, idx) in filteredManagedUsers" :key="idx" class="hover:bg-slate-900/40 transition-colors">
+                  <td class="py-3.5 px-4">
+                    <div class="font-bold text-white text-xs">{{ u.full_name }}</div>
+                    <div class="text-slate-400 font-mono text-[11px]">{{ u.email }}</div>
+                    <div v-if="u.college_name" class="text-slate-500 text-[10px] mt-0.5">{{ u.college_name }}</div>
+                  </td>
+
+                  <td class="py-3.5 px-4">
+                    <div class="flex items-center gap-1.5">
+                      <span
+                        :class="[
+                          'rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                          u.role === 'super_admin' ? 'bg-amber-950 text-amber-300 border border-amber-800' :
+                          u.role === 'developer' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
+                          u.role === 'tutor' ? 'bg-indigo-950 text-indigo-300 border border-indigo-800' :
+                          u.role === 'employer' ? 'bg-sky-950 text-sky-300 border border-sky-800' :
+                          'bg-slate-900 text-slate-300 border border-slate-800'
+                        ]"
+                      >
+                        {{ u.role }}
+                      </span>
+                    </div>
+                    <div v-if="u.hired_status === 'hired_internal_developer'" class="text-[10px] text-emerald-400 font-bold mt-1">
+                      💼 Hired Developer @ Palantir ({{ u.salary_or_stipend || '₹45,000/mo' }})
+                    </div>
+                  </td>
+
+                  <td class="py-3.5 px-4">
+                    <button
+                      @click="toggleUserPause(u)"
+                      :class="[
+                        'rounded-full px-2.5 py-0.5 text-[10px] font-bold border transition-colors',
+                        u.status === 'active'
+                          ? 'bg-emerald-950 text-emerald-400 border-emerald-800/60'
+                          : 'bg-red-950 text-red-400 border-red-800/60'
+                      ]"
+                    >
+                      {{ u.status === 'active' ? '🟢 Active' : '⏸️ Paused' }}
+                    </button>
+                  </td>
+
+                  <td class="py-3.5 px-4">
+                    <div class="flex flex-wrap gap-1">
+                      <span
+                        v-if="u.permissions?.can_grade"
+                        class="rounded bg-indigo-950/80 border border-indigo-800/50 px-1.5 py-0.2 text-[9px] text-indigo-300 font-medium"
+                      >
+                        Grade PRs
+                      </span>
+                      <span
+                        v-if="u.permissions?.can_issue_cert"
+                        class="rounded bg-sky-950/80 border border-sky-800/50 px-1.5 py-0.2 text-[9px] text-sky-300 font-medium"
+                      >
+                        Issue Certs
+                      </span>
+                      <span
+                        v-if="u.permissions?.can_view_leads"
+                        class="rounded bg-emerald-950/80 border border-emerald-800/50 px-1.5 py-0.2 text-[9px] text-emerald-300 font-medium"
+                      >
+                        View Leads
+                      </span>
+                      <span
+                        v-if="u.permissions?.can_hire"
+                        class="rounded bg-amber-950/80 border border-amber-800/50 px-1.5 py-0.2 text-[9px] text-amber-300 font-medium"
+                      >
+                        Hiring
+                      </span>
+                      <span
+                        v-if="u.permissions?.can_manage_users"
+                        class="rounded bg-rose-950/80 border border-rose-800/50 px-1.5 py-0.2 text-[9px] text-rose-300 font-bold"
+                      >
+                        Super Admin
+                      </span>
+                    </div>
+                  </td>
+
+                  <td class="py-3.5 px-4 text-right">
+                    <div class="flex items-center justify-end gap-1.5">
+                      <!-- Promote / Demote -->
+                      <button
+                        @click="openPromoteModal(u)"
+                        class="rounded-lg bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 px-2.5 py-1 text-[11px] font-bold text-white transition-colors"
+                      >
+                        Promote / Hire 🚀
+                      </button>
+
+                      <!-- Permissions -->
+                      <button
+                        @click="openPermissionsModal(u)"
+                        class="rounded-lg bg-slate-800 hover:bg-slate-700 px-2.5 py-1 text-[11px] font-semibold text-slate-300 transition-colors"
+                      >
+                        Powers ⚙️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUBTAB 2: Create User / Invite Staff Form -->
+        <div v-else-if="superAdminTab === '+ Create User / Invite Staff'" class="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800/80 space-y-6">
+          <div>
+            <h3 class="text-lg font-bold text-white">Create New Staff Member or Partner Account</h3>
+            <p class="text-xs text-slate-400">Instantly provision Tutors, Developers, Employers, or Admins with custom powers</p>
+          </div>
+
+          <form @submit.prevent="createNewUser" class="space-y-4 text-xs max-w-2xl">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Full Name *</label>
+                <input
+                  v-model="newUserForm.full_name"
+                  required
+                  placeholder="e.g. David Chen"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white"
+                />
+              </div>
+
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Email Address *</label>
+                <input
+                  v-model="newUserForm.email"
+                  type="email"
+                  required
+                  placeholder="e.g. david.chen@palantir.academy"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Assign Role *</label>
+                <select
+                  v-model="newUserForm.role"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white"
+                >
+                  <option value="tutor">Tutor / Senior Instructor</option>
+                  <option value="developer">Internal Software Developer</option>
+                  <option value="employer">Partner Employer / Hiring Manager</option>
+                  <option value="admin">Operations Admin</option>
+                  <option value="student">Student / Intern</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Monthly Salary / Stipend</label>
+                <input
+                  v-model="newUserForm.salary_or_stipend"
+                  placeholder="e.g. ₹55,000/month"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white"
+                />
+              </div>
+            </div>
+
+            <!-- Custom Powers Checkbox Matrix -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3">
+              <label class="block text-amber-400 font-bold uppercase tracking-wider text-[11px]">
+                Grant Custom Powers & Privileges
+              </label>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" v-model="newUserForm.permissions.can_grade" class="rounded text-indigo-600" />
+                  <span class="text-slate-300">Can Audit & Grade Student PRs</span>
+                </label>
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" v-model="newUserForm.permissions.can_issue_cert" class="rounded text-indigo-600" />
+                  <span class="text-slate-300">Can Issue Cryptographic Certificates</span>
+                </label>
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" v-model="newUserForm.permissions.can_view_leads" class="rounded text-indigo-600" />
+                  <span class="text-slate-300">Can Access Inbound Lead CRM</span>
+                </label>
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" v-model="newUserForm.permissions.can_hire" class="rounded text-indigo-600" />
+                  <span class="text-slate-300">Can Review & Send Hiring Offers</span>
+                </label>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="rounded-xl bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 px-6 py-2.5 font-bold text-white shadow-lg shadow-amber-600/20 transition-all"
+            >
+              Provision Account & Grant Powers →
+            </button>
+          </form>
+        </div>
+
+        <!-- SUBTAB 3: Student Talent & Hiring Desk -->
+        <div v-else class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-white">Top 10% Student Talent Pool & Internal Hiring</h3>
+              <p class="text-xs text-slate-400">Review outstanding interns and hire them directly as internal developers at Palantir Tech Academy</p>
+            </div>
+            <span class="rounded-full bg-emerald-950 border border-emerald-800/60 px-3 py-1 text-xs font-bold text-emerald-400">
+              Direct Placement Engine
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div
+              v-for="(student, idx) in candidateStudents"
+              :key="idx"
+              class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-4"
+            >
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-base font-bold text-white">{{ student.name }}</h4>
+                  <p class="text-xs text-slate-400">{{ student.college }} • Grade: {{ student.grade }}</p>
+                </div>
+                <span class="font-mono text-xs text-emerald-400 font-bold bg-emerald-950 border border-emerald-800/60 px-2 py-0.5 rounded-lg">
+                  {{ student.attendance }}% Attendance
+                </span>
+              </div>
+
+              <div class="rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs space-y-1">
+                <span class="text-[11px] text-slate-500 font-semibold block">Verified Capstone:</span>
+                <p class="text-slate-200 font-medium">{{ student.capstone }}</p>
+                <a :href="student.github" target="_blank" class="text-sky-400 text-[11px] underline block pt-0.5">
+                  Inspect Verified GitHub PRs →
+                </a>
+              </div>
+
+              <!-- Hire Button Action -->
+              <div class="pt-2 flex items-center justify-between">
+                <span class="text-xs text-slate-400">Recommended Offer: ₹45,000/mo</span>
+                <button
+                  @click="hireStudentAsDeveloper(student)"
+                  class="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 px-4 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/20 transition-all hover:scale-105"
+                >
+                  Hire as Junior Developer 💼
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- ============================================================ -->
       <!-- 1. ADMIN WORKSPACE -->
       <!-- ============================================================ -->
-      <div v-if="activeRole === 'Admin'" class="space-y-8">
+      <div v-else-if="activeRole === 'Admin'" class="space-y-8">
         <!-- KPI Analytics Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
@@ -307,23 +656,23 @@
             <form @submit.prevent="generateCertificate" class="space-y-4 text-xs">
               <div>
                 <label class="block text-slate-300 font-semibold mb-1">Student Full Name</label>
-                <input v-model="newCert.student_name" required placeholder="e.g. Aarav Mehta" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white" />
+                <input v-model="newCert.student_name" required placeholder="e.g. Aarav Mehta" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
               </div>
               <div>
                 <label class="block text-slate-300 font-semibold mb-1">College / University</label>
-                <input v-model="newCert.college_name" required placeholder="e.g. Delhi Technological University (DTU)" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white" />
+                <input v-model="newCert.college_name" required placeholder="e.g. Delhi Technological University (DTU)" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
               </div>
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-slate-300 font-semibold mb-1">Program Duration</label>
-                  <select v-model="newCert.duration" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white">
+                  <select v-model="newCert.duration" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white">
                     <option value="6 Months (320 Industrial Hours)">6 Months (320 Hours)</option>
                     <option value="3 Months (160 Industrial Hours)">3 Months (160 Hours)</option>
                   </select>
                 </div>
                 <div>
                   <label class="block text-slate-300 font-semibold mb-1">Performance Grade</label>
-                  <select v-model="newCert.grade" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white">
+                  <select v-model="newCert.grade" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white">
                     <option value="Distinction (Grade A+)">Distinction (Grade A+)</option>
                     <option value="Honors (Grade A)">Honors (Grade A)</option>
                     <option value="First Class (Grade B+)">First Class (Grade B+)</option>
@@ -332,7 +681,7 @@
               </div>
               <div>
                 <label class="block text-slate-300 font-semibold mb-1">Capstone Project Title</label>
-                <input v-model="newCert.capstone_project" required placeholder="e.g. Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white" />
+                <input v-model="newCert.capstone_project" required placeholder="e.g. Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
               </div>
               <button
                 type="submit"
@@ -507,7 +856,7 @@
           </div>
         </div>
 
-        <!-- AI VIVA VOCE EXAMINER SIMULATOR (NEW FEATURE) -->
+        <!-- AI VIVA VOCE EXAMINER SIMULATOR -->
         <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 space-y-5 border border-indigo-500/40">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -628,6 +977,120 @@
         </div>
       </div>
     </div>
+
+    <!-- ============================================================ -->
+    <!-- MODALS: PROMOTION/HIRING & CUSTOM POWERS MODAL -->
+    <!-- ============================================================ -->
+
+    <!-- 1. Promote / Hire Modal -->
+    <div v-if="isPromoteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div @click="isPromoteModalOpen = false" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+      <div class="relative w-full max-w-lg rounded-3xl border border-amber-500/40 bg-slate-900 p-6 sm:p-8 shadow-2xl text-slate-100 space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Super Admin Master Action</span>
+            <h3 class="text-lg font-bold text-white mt-0.5">Promote / Hire User: {{ selectedUser?.full_name }}</h3>
+          </div>
+          <button @click="isPromoteModalOpen = false" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Target Role Transition</label>
+            <select v-model="targetRole" class="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white">
+              <option value="developer">Internal Software Developer (Hired Employee)</option>
+              <option value="tutor">Tutor / Technical Mentor</option>
+              <option value="admin">Operations Admin</option>
+              <option value="student">Student / Intern</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Employment / Placement Status</label>
+            <select v-model="targetHiredStatus" class="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white">
+              <option value="hired_internal_developer">Hired as Internal Developer @ Palantir Academy</option>
+              <option value="placed_partner_employer">Placed at Partner Employer (ApexCloud)</option>
+              <option value="not_hired">Standard Active Role</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1">Monthly Salary / Stipend</label>
+            <input
+              v-model="targetSalary"
+              placeholder="e.g. ₹45,000/month"
+              class="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white"
+            />
+          </div>
+
+          <div class="rounded-xl border border-amber-900/40 bg-amber-950/20 p-3 text-[11px] text-amber-300">
+            💡 <strong>Promoting to Developer</strong> automatically updates their portal privileges and issues an internal employment letter.
+          </div>
+
+          <button
+            @click="confirmPromotion"
+            class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 py-2.5 font-bold text-white shadow-lg shadow-emerald-600/20 transition-all"
+          >
+            Confirm Promotion & Update Role →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Custom Permissions Modal -->
+    <div v-if="isPermissionsModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div @click="isPermissionsModalOpen = false" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+      <div class="relative w-full max-w-md rounded-3xl border border-indigo-500/40 bg-slate-900 p-6 sm:p-8 shadow-2xl text-slate-100 space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Granular Security Powers</span>
+            <h3 class="text-lg font-bold text-white mt-0.5">{{ selectedUser?.full_name }}</h3>
+          </div>
+          <button @click="isPermissionsModalOpen = false" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <div class="space-y-3.5 text-xs">
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer hover:border-slate-700">
+            <input type="checkbox" v-model="selectedUserPermissions.can_grade" class="rounded text-indigo-600" />
+            <div>
+              <span class="font-bold text-white block">Audit & Grade Student PRs</span>
+              <span class="text-[11px] text-slate-400">Allows approving pull requests and issuing grades</span>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer hover:border-slate-700">
+            <input type="checkbox" v-model="selectedUserPermissions.can_issue_cert" class="rounded text-indigo-600" />
+            <div>
+              <span class="font-bold text-white block">Issue Cryptographic Certificates</span>
+              <span class="text-[11px] text-slate-400">Allows generating public verifiable credentials</span>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer hover:border-slate-700">
+            <input type="checkbox" v-model="selectedUserPermissions.can_view_leads" class="rounded text-indigo-600" />
+            <div>
+              <span class="font-bold text-white block">View Inbound Leads CRM</span>
+              <span class="text-[11px] text-slate-400">Access to phone numbers and student inquiries</span>
+            </div>
+          </label>
+
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer hover:border-slate-700">
+            <input type="checkbox" v-model="selectedUserPermissions.can_hire" class="rounded text-indigo-600" />
+            <div>
+              <span class="font-bold text-white block">Talent Pool Hiring Powers</span>
+              <span class="text-[11px] text-slate-400">Send job offers directly to top students</span>
+            </div>
+          </label>
+
+          <button
+            @click="savePermissions"
+            class="w-full mt-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 font-bold text-white shadow-lg shadow-indigo-600/30 transition-all"
+          >
+            Save Granted Powers
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -637,12 +1100,212 @@ import { useAuth } from '~/composables/useAuth'
 
 defineEmits(['open-enroll'])
 
-const { user, isAuthModalOpen, loginAsDemoStudent } = useAuth()
+const { user, isAuthModalOpen, loginAsDemoStudent, loginAsSuperAdmin } = useAuth()
 
-const activeRole = ref('Admin')
+const activeRole = ref('Super Admin')
 const adminTab = ref('Inbound Leads Pipeline')
+const superAdminTab = ref('User Directory & Role Hierarchy')
+const roleFilter = ref('all')
 const leadSearch = ref('')
 
+// Super Admin Managed Users
+const managedUsers = ref([
+  {
+    id: 'u1',
+    full_name: 'Chief Super Admin (Palantir)',
+    email: 'extractionevolution@gmail.com',
+    role: 'super_admin',
+    status: 'active',
+    hired_status: 'not_hired',
+    permissions: { can_grade: true, can_issue_cert: true, can_view_leads: true, can_hire: true, can_manage_users: true }
+  },
+  {
+    id: 'u2',
+    full_name: 'Aarav Mehta',
+    email: 'aarav.mehta@dtu.ac.in',
+    college_name: 'DTU (8th Sem)',
+    role: 'developer',
+    status: 'active',
+    hired_status: 'hired_internal_developer',
+    salary_or_stipend: '₹45,000/month',
+    permissions: { can_grade: true, can_issue_cert: false, can_view_leads: false, can_hire: false }
+  },
+  {
+    id: 'u3',
+    full_name: 'Alex Mercer',
+    email: 'alex.mercer@palantir.academy',
+    role: 'tutor',
+    status: 'active',
+    assigned_batch: 'PTA-2026-FS-01',
+    permissions: { can_grade: true, can_issue_cert: false, can_view_leads: false, can_hire: false }
+  },
+  {
+    id: 'u4',
+    full_name: 'Dr. Sophia Vance',
+    email: 'sophia.vance@palantir.academy',
+    role: 'tutor',
+    status: 'active',
+    assigned_batch: 'PTA-2026-AI-01',
+    permissions: { can_grade: true, can_issue_cert: false, can_view_leads: false, can_hire: false }
+  },
+  {
+    id: 'u5',
+    full_name: 'ApexCloud Hiring Partner',
+    email: 'recruiting@apexcloud.io',
+    role: 'employer',
+    status: 'active',
+    permissions: { can_grade: false, can_issue_cert: false, can_view_leads: false, can_hire: true }
+  },
+  {
+    id: 'u6',
+    full_name: 'Sneha Patel',
+    email: 'sneha.patel@vit.ac.in',
+    college_name: 'VIT Vellore (7th Sem)',
+    role: 'student',
+    status: 'active',
+    hired_status: 'not_hired',
+    permissions: { can_grade: false, can_issue_cert: false, can_view_leads: false, can_hire: false }
+  }
+])
+
+const filteredManagedUsers = computed(() => {
+  if (roleFilter.value === 'all') return managedUsers.value
+  return managedUsers.value.filter(u => u.role === roleFilter.value)
+})
+
+// Toggle user pause / active status
+const toggleUserPause = async (u) => {
+  u.status = u.status === 'active' ? 'paused' : 'active'
+  try {
+    await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_status', userId: u.id, status: u.status })
+    })
+  } catch (e) {
+    console.warn('Status toggle saved locally:', e)
+  }
+}
+
+// Promotion / Hiring Modal
+const isPromoteModalOpen = ref(false)
+const selectedUser = ref(null)
+const targetRole = ref('developer')
+const targetHiredStatus = ref('hired_internal_developer')
+const targetSalary = ref('₹45,000/month')
+
+const openPromoteModal = (u) => {
+  selectedUser.value = u
+  targetRole.value = u.role === 'student' ? 'developer' : u.role
+  targetHiredStatus.value = u.role === 'student' ? 'hired_internal_developer' : 'not_hired'
+  targetSalary.value = u.salary_or_stipend || '₹45,000/month'
+  isPromoteModalOpen.value = true
+}
+
+const confirmPromotion = async () => {
+  if (!selectedUser.value) return
+  selectedUser.value.role = targetRole.value
+  selectedUser.value.hired_status = targetHiredStatus.value
+  selectedUser.value.salary_or_stipend = targetSalary.value
+
+  // Grant appropriate powers
+  if (targetRole.value === 'developer') {
+    selectedUser.value.permissions = {
+      can_grade: true,
+      can_issue_cert: false,
+      can_view_leads: false,
+      can_hire: false
+    }
+  }
+
+  isPromoteModalOpen.value = false
+  alert(`Success: ${selectedUser.value.full_name} has been transitioned to ${targetRole.value.toUpperCase()}!`)
+}
+
+// Custom Permissions Modal
+const isPermissionsModalOpen = ref(false)
+const selectedUserPermissions = ref({})
+
+const openPermissionsModal = (u) => {
+  selectedUser.value = u
+  selectedUserPermissions.value = { ...u.permissions }
+  isPermissionsModalOpen.value = true
+}
+
+const savePermissions = () => {
+  if (!selectedUser.value) return
+  selectedUser.value.permissions = { ...selectedUserPermissions.value }
+  isPermissionsModalOpen.value = false
+  alert(`Custom privileges updated for ${selectedUser.value.full_name}`)
+}
+
+// Create New User Form
+const newUserForm = ref({
+  full_name: '',
+  email: '',
+  role: 'tutor',
+  salary_or_stipend: '₹55,000/month',
+  permissions: {
+    can_grade: true,
+    can_issue_cert: false,
+    can_view_leads: false,
+    can_hire: false
+  }
+})
+
+const createNewUser = () => {
+  managedUsers.value.push({
+    id: `u-${Date.now()}`,
+    full_name: newUserForm.value.full_name,
+    email: newUserForm.value.email,
+    role: newUserForm.value.role,
+    status: 'active',
+    salary_or_stipend: newUserForm.value.salary_or_stipend,
+    permissions: { ...newUserForm.value.permissions }
+  })
+
+  alert(`Account provisioned for ${newUserForm.value.full_name} (${newUserForm.value.role})!`)
+  superAdminTab.value = 'User Directory & Role Hierarchy'
+}
+
+// Candidate Students for Direct Hiring
+const candidateStudents = ref([
+  {
+    name: 'Sneha Patel',
+    college: 'VIT Vellore (7th Sem)',
+    grade: 'A+ (Distinction)',
+    attendance: 94,
+    capstone: 'Docker Containerized Task Worker Pool with BullMQ & Redis',
+    github: 'https://github.com/palantir-tech/sample-capstone'
+  },
+  {
+    name: 'Karthik Rao',
+    college: 'BITS Pilani (8th Sem)',
+    grade: 'A (Honors)',
+    attendance: 90,
+    capstone: 'High-Throughput WebSockets Gateway with Nitro & Redis Pub/Sub',
+    github: 'https://github.com/palantir-tech/sample-capstone'
+  }
+])
+
+const hireStudentAsDeveloper = (student) => {
+  managedUsers.value.push({
+    id: `u-${Date.now()}`,
+    full_name: student.name,
+    email: `${student.name.toLowerCase().replace(' ', '.')}@palantir.academy`,
+    college_name: student.college,
+    role: 'developer',
+    status: 'active',
+    hired_status: 'hired_internal_developer',
+    salary_or_stipend: '₹45,000/month',
+    permissions: { can_grade: true, can_issue_cert: false, can_view_leads: false, can_hire: false }
+  })
+
+  alert(`🎉 Congratulations! ${student.name} has been hired as an Internal Junior Developer at Palantir Tech Academy (₹45,000/month)!`)
+  superAdminTab.value = 'User Directory & Role Hierarchy'
+}
+
+// Normal Admin State
 const leads = ref([
   {
     name: 'Rohan Verma',
@@ -673,16 +1336,6 @@ const leads = ref([
     track: 'Full-Stack Web',
     duration: '3 Months',
     status: 'Enrolled'
-  },
-  {
-    name: 'Pooja Iyer',
-    college: 'SRM Institute Chennai',
-    year: '3rd Year CSE',
-    phone: '+91 9844556677',
-    email: 'pooja.i@srmist.edu.in',
-    track: 'Applied AI & GenAI',
-    duration: '6 Months',
-    status: 'New'
   }
 ])
 
@@ -722,15 +1375,6 @@ const demoBatches = [
     enrolled: 28,
     capacity: 30,
     status: 'Ongoing'
-  },
-  {
-    code: 'PTA-2026-FS-02',
-    track: 'Full-Stack Fast-Track (Summer Cohort)',
-    tutor: 'David Chen (DevOps Architect)',
-    timing: '10:00 AM - 1:00 PM IST (Weekends)',
-    enrolled: 18,
-    capacity: 30,
-    status: 'Upcoming'
   }
 ]
 
@@ -772,8 +1416,7 @@ const vivaFeedback = ref(null)
 const sampleQuestions = [
   'How does Server-Side Rendering (SSR) in Nuxt 3 optimize Core Web Vitals compared to a traditional Single Page Application (SPA)?',
   'Explain how you prevent Race Conditions when multiple users reserve the same internship cohort seat at the exact same millisecond.',
-  'What is the architectural difference between authentication and authorization in your Supabase JWT security model?',
-  'Why did you decouple your background email and PDF certificate workers using BullMQ queues rather than executing them synchronously inside the HTTP handler?'
+  'What is the architectural difference between authentication and authorization in your Supabase JWT security model?'
 ]
 
 const generateVivaQuestion = () => {

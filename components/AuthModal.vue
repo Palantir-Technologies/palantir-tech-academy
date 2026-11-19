@@ -129,8 +129,14 @@
         </button>
       </form>
 
-      <!-- Instant Demo Bypass Button -->
-      <div class="mt-5 pt-4 border-t border-slate-800/80 text-center">
+      <!-- Instant Demo Bypass Buttons -->
+      <div class="mt-5 pt-4 border-t border-slate-800/80 space-y-2 text-center">
+        <button
+          @click="loginAsSuperAdmin"
+          class="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center justify-center gap-1.5 mx-auto transition-colors"
+        >
+          <span>👑 Master Login as Super Admin (extractionevolution@gmail.com)</span> →
+        </button>
         <button
           @click="loginAsDemoStudent"
           class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center justify-center gap-1 mx-auto transition-colors"
@@ -153,7 +159,8 @@ const {
   signInWithEmail,
   signUpWithEmail,
   signInWithGoogle,
-  loginAsDemoStudent
+  loginAsDemoStudent,
+  loginAsSuperAdmin
 } = useAuth()
 
 const mode = ref('signin')
@@ -176,3 +183,4 @@ const handleSubmit = async () => {
   }
 }
 </script>
+
