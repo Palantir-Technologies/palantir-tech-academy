@@ -12,7 +12,9 @@
             <div class="flex items-center gap-2">
               <span class="text-xs font-semibold text-slate-400">Palantir Academy</span>
               <span class="text-slate-600">/</span>
-              <span class="text-xs font-bold text-white uppercase tracking-wider">{{ activeRole }} Hub</span>
+              <span class="text-xs font-bold text-white uppercase tracking-wider">
+                {{ currentWorkspaceTitle }}
+              </span>
             </div>
             <div class="flex items-center gap-2 mt-0.5">
               <span class="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -21,69 +23,101 @@
           </div>
         </div>
 
-        <!-- Role Workspace Switcher -->
-        <div class="flex items-center rounded-xl border border-slate-800 bg-slate-900/90 p-1 shadow-inner overflow-x-auto">
-          <button
-            v-for="role in ['Super Admin', 'Admin', 'Tutor', 'Student']"
-            :key="role"
-            @click="activeRole = role"
-            :class="[
-              'rounded-lg px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap',
-              activeRole === role
-                ? role === 'Super Admin'
-                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
-                  : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                : 'text-slate-400 hover:text-slate-200'
-            ]"
-          >
-            <span>{{ role === 'Super Admin' ? '👑 Super Admin' : role === 'Admin' ? '🛡️ Admin' : role === 'Tutor' ? '👨‍🏫 Tutor' : '🎓 Student' }}</span>
-            <span
-              v-if="role === 'Super Admin'"
-              class="rounded-full bg-amber-950 border border-amber-700/60 px-1.5 text-[9px] text-amber-300 font-mono"
+        <!-- Role Workspace Status & Mode Controls -->
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <!-- Super Admin Specific View Mode Switcher -->
+          <div v-if="userRole === 'super_admin'" class="flex items-center gap-2">
+            <button
+              @click="superAdminPreviewMode = !superAdminPreviewMode"
+              :class="[
+                'rounded-xl px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
+                superAdminPreviewMode
+                  ? 'bg-amber-950 text-amber-300 border-amber-700/80'
+                  : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white'
+              ]"
             >
-              Master
+              <span>{{ superAdminPreviewMode ? '👑 Return to Master Console' : '👁️ Preview Student Workspace' }}</span>
+            </button>
+            <span class="rounded-lg bg-amber-950/80 border border-amber-800/60 px-2.5 py-1 text-[11px] text-amber-300 font-mono font-bold">
+              👑 Chief Master Owner
             </span>
-          </button>
+          </div>
+
+          <!-- Non-Super-Admin Quick Test Switcher for Evaluators -->
+          <div v-else class="flex items-center gap-2">
+            <button
+              @click="loginAsSuperAdmin"
+              class="rounded-xl border border-amber-500/50 bg-amber-950/50 hover:bg-amber-900/60 px-3 py-1.5 text-xs font-bold text-amber-300 transition-colors flex items-center gap-1 shadow-sm"
+            >
+              <span>👑 Super Admin Login</span>
+            </button>
+            <button
+              v-if="!user"
+              @click="loginAsDemoStudent"
+              class="rounded-xl border border-indigo-500/40 bg-indigo-950/50 hover:bg-indigo-900/60 px-3 py-1.5 text-xs font-bold text-indigo-300 transition-colors"
+            >
+              🎓 Demo Student
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8 space-y-8">
+      <!-- Super Admin Preview Banner (When Super Admin tests Student experience) -->
+      <div
+        v-if="userRole === 'super_admin' && superAdminPreviewMode"
+        class="rounded-2xl border border-amber-700/80 bg-amber-950/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs shadow-lg shadow-amber-950/30"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-xl">👁️</span>
+          <div>
+            <span class="font-bold text-amber-300 block">Student Learning & AI Viva Voce Simulation Preview</span>
+            <span class="text-amber-200/80 text-[11px]">You are logged in as Chief Super Admin and previewing what enrolled college interns see.</span>
+          </div>
+        </div>
+        <button
+          @click="superAdminPreviewMode = false"
+          class="rounded-xl bg-amber-600 hover:bg-amber-500 px-4 py-2 font-bold text-white transition-colors text-xs whitespace-nowrap shadow-md"
+        >
+          👑 Back to Master Hub
+        </button>
+      </div>
+
       <!-- User Profile Banner (If Logged In) -->
       <div v-if="user" class="glass-panel-glow rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-3.5">
-          <div class="h-12 w-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-400 p-0.5 shadow-md">
+          <div class="h-12 w-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-400 p-0.5 shadow-md flex-shrink-0">
             <div class="h-full w-full rounded-[14px] bg-slate-950 flex items-center justify-center font-extrabold text-white text-base">
               {{ (user.user_metadata?.full_name || user.email || 'U').charAt(0).toUpperCase() }}
             </div>
           </div>
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <h3 class="text-base font-bold text-white">{{ user.user_metadata?.full_name || user.email?.split('@')[0] }}</h3>
               <span
                 :class="[
-                  'rounded border px-2 py-0.2 text-[10px] font-bold',
-                  user.user_metadata?.role === 'super_admin'
-                    ? 'bg-amber-950 text-amber-400 border-amber-800/60'
-                    : 'bg-emerald-950 text-emerald-400 border-emerald-800/60'
+                  'rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase',
+                  userRole === 'super_admin'
+                    ? 'bg-amber-950 text-amber-300 border-amber-800/80'
+                    : 'bg-emerald-950 text-emerald-300 border-emerald-800/80'
                 ]"
               >
-                {{ user.user_metadata?.role === 'super_admin' ? '👑 Chief Super Admin' : 'Verified Intern' }}
+                {{ userRole === 'super_admin' ? '👑 Chief Super Admin' : 'Verified Intern' }}
               </span>
             </div>
             <p class="text-xs text-slate-400 mt-0.5">
-              {{ user.email }} • Full System Clearance
+              {{ user.email }} • {{ userRole === 'super_admin' ? 'Full System Clearance & Master Ledger Control' : 'Active Enrollment' }}
             </p>
           </div>
         </div>
 
         <div class="flex items-center gap-3">
           <button
-            v-if="user.user_metadata?.role !== 'super_admin'"
-            @click="loginAsSuperAdmin"
-            class="rounded-xl border border-amber-500/50 bg-amber-950/40 hover:bg-amber-900/40 px-3.5 py-1.5 text-xs font-bold text-amber-300 transition-colors"
+            @click="isProfileModalOpen = true"
+            class="rounded-xl border border-slate-700 bg-slate-900/90 hover:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-200 transition-colors flex items-center gap-1.5"
           >
-            Switch to Super Admin Account 👑
+            <span>⚙️ Edit Profile & Password</span>
           </button>
           <NuxtLink
             to="/verify/PTA-CERT-2026-8941"
@@ -95,9 +129,9 @@
       </div>
 
       <!-- ============================================================ -->
-      <!-- 👑 SUPER ADMIN COMMAND HUB (MASTER CONTROL) -->
+      <!-- 👑 SUPER ADMIN MASTER COMMAND HUB -->
       <!-- ============================================================ -->
-      <div v-if="activeRole === 'Super Admin'" class="space-y-8">
+      <div v-if="currentView === 'super_admin'" class="space-y-8">
         <!-- Super Admin Metrics Banner -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="glass-panel rounded-2xl p-5 border border-amber-500/30 hover:border-amber-500/50 transition-all">
@@ -133,24 +167,24 @@
 
           <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
             <div class="flex items-center justify-between text-xs text-slate-400">
-              <span>Partner Employers</span>
-              <span class="text-sky-400 font-semibold bg-sky-950/60 border border-sky-800/40 px-2 py-0.5 rounded-full text-[10px]">Corporate</span>
+              <span>Inbound Leads CRM</span>
+              <span class="text-sky-400 font-semibold bg-sky-950/60 border border-sky-800/40 px-2 py-0.5 rounded-full text-[10px]">Live Pipeline</span>
             </div>
             <div class="text-3xl font-extrabold text-sky-400 mt-2">
-              {{ managedUsers.filter(u => u.role === 'employer').length }}
+              {{ leads.length }}
             </div>
-            <p class="text-[11px] text-slate-400 mt-1">Hiring access to student pool</p>
+            <p class="text-[11px] text-slate-400 mt-1">AI Chatbot & Application capture</p>
           </div>
         </div>
 
         <!-- Super Admin Sub Tabs -->
-        <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2 sm:gap-3 border-b border-slate-800 pb-3 overflow-x-auto">
           <button
-            v-for="tab in ['User Directory & Role Hierarchy', '+ Create User / Invite Staff', 'Student Talent & Hiring Desk']"
+            v-for="tab in ['User Directory & Staff Hierarchy', '+ Create User / Invite Staff', 'Student Talent & Hiring Desk', 'Inbound Leads (CRM)', 'Batches & Cohorts', 'Credential Issuer']"
             :key="tab"
             @click="superAdminTab = tab"
             :class="[
-              'rounded-xl px-4 py-2 text-xs font-bold transition-all',
+              'rounded-xl px-4 py-2 text-xs font-bold transition-all whitespace-nowrap',
               superAdminTab === tab
                 ? 'bg-amber-600 text-white shadow-md'
                 : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
@@ -161,7 +195,7 @@
         </div>
 
         <!-- SUBTAB 1: User Directory & Permissions Management -->
-        <div v-if="superAdminTab === 'User Directory & Role Hierarchy'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
+        <div v-if="superAdminTab === 'User Directory & Staff Hierarchy'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -170,21 +204,23 @@
                   Master Privileges
                 </span>
               </h3>
-              <p class="text-xs text-slate-400">Pause accounts, promote students to developers, or customize granular permissions</p>
+              <p class="text-xs text-slate-400">Filter students and staff, pause accounts, promote students to developers, or assign granular powers</p>
             </div>
 
             <!-- Filter by Role -->
             <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-400 font-semibold">Filter:</span>
               <select
                 v-model="roleFilter"
                 class="rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-white focus:outline-none"
               >
-                <option value="all">All Roles</option>
-                <option value="student">Students</option>
-                <option value="developer">Developers</option>
-                <option value="tutor">Tutors</option>
-                <option value="employer">Employers</option>
-                <option value="admin">Admins</option>
+                <option value="all">All Roles (Students & Staff)</option>
+                <option value="student">Students / Interns</option>
+                <option value="developer">Internal Developers</option>
+                <option value="tutor">Faculty / Tutors</option>
+                <option value="employer">Partner Employers</option>
+                <option value="admin">Operations Admins</option>
+                <option value="super_admin">Super Admins</option>
               </select>
             </div>
           </div>
@@ -204,7 +240,10 @@
               <tbody class="divide-y divide-slate-800/60 bg-slate-950/40">
                 <tr v-for="(u, idx) in filteredManagedUsers" :key="idx" class="hover:bg-slate-900/40 transition-colors">
                   <td class="py-3.5 px-4">
-                    <div class="font-bold text-white text-xs">{{ u.full_name }}</div>
+                    <div class="font-bold text-white text-xs flex items-center gap-1.5">
+                      <span>{{ u.full_name }}</span>
+                      <span v-if="isMasterSuperAdmin(u)" class="text-amber-400 text-[10px]">👑 (You)</span>
+                    </div>
                     <div class="text-slate-400 font-mono text-[11px]">{{ u.email }}</div>
                     <div v-if="u.college_name" class="text-slate-500 text-[10px] mt-0.5">{{ u.college_name }}</div>
                   </td>
@@ -230,13 +269,19 @@
                   </td>
 
                   <td class="py-3.5 px-4">
+                    <!-- Protected Super Admin Status: Cannot be paused -->
+                    <div v-if="isMasterSuperAdmin(u)" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold border bg-amber-950/80 text-amber-300 border-amber-700/80">
+                      <span>👑</span> Master Owner (Protected)
+                    </div>
+                    <!-- Regular user status toggle -->
                     <button
+                      v-else
                       @click="toggleUserPause(u)"
                       :class="[
                         'rounded-full px-2.5 py-0.5 text-[10px] font-bold border transition-colors',
                         u.status === 'active'
-                          ? 'bg-emerald-950 text-emerald-400 border-emerald-800/60'
-                          : 'bg-red-950 text-red-400 border-red-800/60'
+                          ? 'bg-emerald-950 text-emerald-400 border-emerald-800/60 hover:bg-emerald-900/60'
+                          : 'bg-red-950 text-red-400 border-red-800/60 hover:bg-red-900/60'
                       ]"
                     >
                       {{ u.status === 'active' ? '🟢 Active' : '⏸️ Paused' }}
@@ -270,7 +315,7 @@
                         Hiring
                       </span>
                       <span
-                        v-if="u.permissions?.can_manage_users"
+                        v-if="u.permissions?.can_manage_users || u.role === 'super_admin'"
                         class="rounded bg-rose-950/80 border border-rose-800/50 px-1.5 py-0.2 text-[9px] text-rose-300 font-bold"
                       >
                         Super Admin
@@ -279,16 +324,18 @@
                   </td>
 
                   <td class="py-3.5 px-4 text-right">
-                    <div class="flex items-center justify-end gap-1.5">
-                      <!-- Promote / Demote -->
+                    <!-- Protected Super Admin Master Account: Cannot promote/demote self -->
+                    <div v-if="isMasterSuperAdmin(u)" class="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-amber-400 bg-amber-950/40 border border-amber-900/60 px-2.5 py-1 rounded-lg">
+                      <span>🛡️</span> Protected Master
+                    </div>
+                    <!-- Regular user actions -->
+                    <div v-else class="flex items-center justify-end gap-1.5">
                       <button
                         @click="openPromoteModal(u)"
                         class="rounded-lg bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 px-2.5 py-1 text-[11px] font-bold text-white transition-colors"
                       >
                         Promote / Hire 🚀
                       </button>
-
-                      <!-- Permissions -->
                       <button
                         @click="openPermissionsModal(u)"
                         class="rounded-lg bg-slate-800 hover:bg-slate-700 px-2.5 py-1 text-[11px] font-semibold text-slate-300 transition-colors"
@@ -350,7 +397,7 @@
               </div>
 
               <div>
-                <label class="block text-slate-300 font-semibold mb-1">Monthly Salary / Stipend</label>
+                <label class="block text-slate-300 font-semibold mb-1">Monthly Salary / Compensation</label>
                 <input
                   v-model="newUserForm.salary_or_stipend"
                   placeholder="e.g. ₹55,000/month"
@@ -359,83 +406,78 @@
               </div>
             </div>
 
-            <!-- Custom Powers Checkbox Matrix -->
-            <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4 space-y-3">
-              <label class="block text-amber-400 font-bold uppercase tracking-wider text-[11px]">
-                Grant Custom Powers & Privileges
-              </label>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label class="flex items-center gap-2 cursor-pointer">
+            <!-- Granular Permissions Checklist -->
+            <div>
+              <label class="block text-slate-300 font-semibold mb-2">Granted Super Admin Powers & Privileges:</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label class="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 cursor-pointer">
                   <input type="checkbox" v-model="newUserForm.permissions.can_grade" class="rounded text-indigo-600" />
-                  <span class="text-slate-300">Can Audit & Grade Student PRs</span>
+                  <span class="text-[11px] text-slate-300">Grade PRs & Code</span>
                 </label>
-
-                <label class="flex items-center gap-2 cursor-pointer">
+                <label class="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 cursor-pointer">
                   <input type="checkbox" v-model="newUserForm.permissions.can_issue_cert" class="rounded text-indigo-600" />
-                  <span class="text-slate-300">Can Issue Cryptographic Certificates</span>
+                  <span class="text-[11px] text-slate-300">Issue Certificates</span>
                 </label>
-
-                <label class="flex items-center gap-2 cursor-pointer">
+                <label class="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 cursor-pointer">
                   <input type="checkbox" v-model="newUserForm.permissions.can_view_leads" class="rounded text-indigo-600" />
-                  <span class="text-slate-300">Can Access Inbound Lead CRM</span>
+                  <span class="text-[11px] text-slate-300">View Inbound Leads</span>
                 </label>
-
-                <label class="flex items-center gap-2 cursor-pointer">
+                <label class="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 cursor-pointer">
                   <input type="checkbox" v-model="newUserForm.permissions.can_hire" class="rounded text-indigo-600" />
-                  <span class="text-slate-300">Can Review & Send Hiring Offers</span>
+                  <span class="text-[11px] text-slate-300">Hiring Authority</span>
                 </label>
               </div>
             </div>
 
-            <button
-              type="submit"
-              class="rounded-xl bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 px-6 py-2.5 font-bold text-white shadow-lg shadow-amber-600/20 transition-all"
-            >
-              Provision Account & Grant Powers →
-            </button>
+            <div class="pt-2">
+              <button
+                type="submit"
+                class="rounded-xl bg-amber-600 hover:bg-amber-500 px-5 py-2.5 font-bold text-white shadow-md shadow-amber-600/20 transition-all hover:scale-105"
+              >
+                Provision User & Grant Powers
+              </button>
+            </div>
           </form>
         </div>
 
-        <!-- SUBTAB 3: Student Talent & Hiring Desk -->
-        <div v-else class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-lg font-bold text-white">Top 10% Student Talent Pool & Internal Hiring</h3>
-              <p class="text-xs text-slate-400">Review outstanding interns and hire them directly as internal developers at Palantir Tech Academy</p>
-            </div>
-            <span class="rounded-full bg-emerald-950 border border-emerald-800/60 px-3 py-1 text-xs font-bold text-emerald-400">
-              Direct Placement Engine
-            </span>
+        <!-- SUBTAB 3: Student Talent & Direct Hiring Desk -->
+        <div v-else-if="superAdminTab === 'Student Talent & Hiring Desk'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-6">
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>🚀 Palantir Internal Talent & Direct Hiring Pipeline</span>
+              <span class="rounded bg-emerald-950 text-emerald-400 border border-emerald-800/60 px-2 py-0.2 text-[10px] font-bold">
+                Direct Conversion Desk
+              </span>
+            </h3>
+            <p class="text-xs text-slate-400">Review outstanding interns and convert them directly into Paid Internal Junior Developers or offer partner placements</p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div
               v-for="(student, idx) in candidateStudents"
               :key="idx"
-              class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-4"
+              class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3.5 hover:border-slate-700 transition-colors"
             >
-              <div class="flex items-center justify-between">
+              <div class="flex items-start justify-between">
                 <div>
-                  <h4 class="text-base font-bold text-white">{{ student.name }}</h4>
-                  <p class="text-xs text-slate-400">{{ student.college }} • Grade: {{ student.grade }}</p>
+                  <h4 class="text-sm font-bold text-white">{{ student.name }}</h4>
+                  <p class="text-[11px] text-slate-400">{{ student.college }}</p>
                 </div>
-                <span class="font-mono text-xs text-emerald-400 font-bold bg-emerald-950 border border-emerald-800/60 px-2 py-0.5 rounded-lg">
-                  {{ student.attendance }}% Attendance
+                <span class="rounded-full bg-emerald-950 border border-emerald-800 px-2 py-0.5 text-[10px] font-mono text-emerald-400 font-bold">
+                  {{ student.grade }}
                 </span>
               </div>
 
-              <div class="rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs space-y-1">
-                <span class="text-[11px] text-slate-500 font-semibold block">Verified Capstone:</span>
-                <p class="text-slate-200 font-medium">{{ student.capstone }}</p>
-                <a :href="student.github" target="_blank" class="text-sky-400 text-[11px] underline block pt-0.5">
-                  Inspect Verified GitHub PRs →
+              <div class="rounded-xl bg-slate-950/80 p-3 border border-slate-800/80 space-y-1">
+                <span class="text-[10px] text-slate-500 uppercase font-semibold">Verified Capstone:</span>
+                <p class="text-xs font-semibold text-slate-200">{{ student.capstone }}</p>
+                <a :href="student.github" target="_blank" class="text-[10px] text-indigo-400 hover:underline block pt-1">
+                  View Verified PRs & Git Commits →
                 </a>
               </div>
 
-              <!-- Hire Button Action -->
-              <div class="pt-2 flex items-center justify-between">
-                <span class="text-xs text-slate-400">Recommended Offer: ₹45,000/mo</span>
+              <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                <span class="text-slate-400 text-[11px]">Attendance: <strong>{{ student.attendance }}%</strong></span>
                 <button
                   @click="hireStudentAsDeveloper(student)"
                   class="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 px-4 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/20 transition-all hover:scale-105"
@@ -446,76 +488,15 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- ============================================================ -->
-      <!-- 1. ADMIN WORKSPACE -->
-      <!-- ============================================================ -->
-      <div v-else-if="activeRole === 'Admin'" class="space-y-8">
-        <!-- KPI Analytics Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
-            <div class="flex items-center justify-between text-xs text-slate-400">
-              <span>Total Inbound Leads</span>
-              <span class="text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full text-[10px]">+28.4%</span>
-            </div>
-            <div class="text-3xl font-extrabold text-white mt-2">{{ leads.length }}</div>
-            <p class="text-[11px] text-slate-500 mt-1">Real-time AI Chatbot capture</p>
-          </div>
-
-          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
-            <div class="flex items-center justify-between text-xs text-slate-400">
-              <span>Active Interns</span>
-              <span class="text-indigo-400 font-semibold bg-indigo-950/60 border border-indigo-800/40 px-2 py-0.5 rounded-full text-[10px]">4 Batches</span>
-            </div>
-            <div class="text-3xl font-extrabold text-indigo-400 mt-2">128</div>
-            <p class="text-[11px] text-slate-500 mt-1">Full-Stack & Applied AI Tracks</p>
-          </div>
-
-          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
-            <div class="flex items-center justify-between text-xs text-slate-400">
-              <span>Verified Credentials</span>
-              <span class="text-sky-400 font-semibold bg-sky-950/60 border border-sky-800/40 px-2 py-0.5 rounded-full text-[10px]">100% QR</span>
-            </div>
-            <div class="text-3xl font-extrabold text-sky-400 mt-2">114</div>
-            <p class="text-[11px] text-slate-500 mt-1">Publicly verifiable records</p>
-          </div>
-
-          <div class="glass-panel rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition-all">
-            <div class="flex items-center justify-between text-xs text-slate-400">
-              <span>College MoUs</span>
-              <span class="text-emerald-400 font-semibold bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full text-[10px]">18 Campus</span>
-            </div>
-            <div class="text-3xl font-extrabold text-emerald-400 mt-2">18</div>
-            <p class="text-[11px] text-slate-500 mt-1">DTU, VIT, BITS, SRM, MIT</p>
-          </div>
-        </div>
-
-        <!-- Admin Sub-Navigation Tabs -->
-        <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
-          <button
-            v-for="tab in ['Inbound Leads Pipeline', 'Batches & Cohorts', 'Credential Issuer']"
-            :key="tab"
-            @click="adminTab = tab"
-            :class="[
-              'rounded-xl px-4 py-2 text-xs font-semibold transition-all',
-              adminTab === tab
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-            ]"
-          >
-            {{ tab }}
-          </button>
-        </div>
-
-        <!-- TAB 1: Inbound Leads Pipeline -->
-        <div v-if="adminTab === 'Inbound Leads Pipeline'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
+        <!-- SUBTAB 4: Inbound Leads (CRM) -->
+        <div v-else-if="superAdminTab === 'Inbound Leads (CRM)'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 class="text-lg font-bold text-white flex items-center gap-2">
                 <span>🤖 Inbound Student Leads & Counseling Desk</span>
               </h3>
-              <p class="text-xs text-slate-400">Leads captured live via the website AI Counselor widget</p>
+              <p class="text-xs text-slate-400">Leads captured live via the AI Counselor widget and website inquiry forms</p>
             </div>
 
             <!-- Search & Filter Controls -->
@@ -548,38 +529,27 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 bg-slate-950/40">
-                <tr v-for="(lead, i) in filteredLeads" :key="i" class="hover:bg-slate-900/40 transition-colors">
-                  <td class="py-3.5 px-4 font-semibold text-white">
-                    <div class="flex items-center gap-2">
-                      <div class="h-7 w-7 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center font-bold text-indigo-300 text-[11px]">
-                        {{ lead.name.charAt(0) }}
-                      </div>
-                      <span>{{ lead.name }}</span>
-                    </div>
-                  </td>
-                  <td class="py-3.5 px-4">
-                    <span class="text-slate-200 font-medium block">{{ lead.college }}</span>
-                    <span class="text-[11px] text-slate-500">{{ lead.year }}</span>
-                  </td>
+                <tr v-for="(lead, idx) in filteredLeads" :key="idx" class="hover:bg-slate-900/40 transition-colors">
+                  <td class="py-3.5 px-4 font-semibold text-white">{{ lead.name }}</td>
+                  <td class="py-3.5 px-4">{{ lead.college }} ({{ lead.year }})</td>
                   <td class="py-3.5 px-4 font-mono text-[11px]">
-                    <div class="text-indigo-300">{{ lead.phone }}</div>
-                    <div class="text-slate-400">{{ lead.email }}</div>
+                    <div>{{ lead.phone }}</div>
+                    <div class="text-slate-400 text-[10px]">{{ lead.email }}</div>
                   </td>
                   <td class="py-3.5 px-4">
-                    <span class="inline-block rounded-md bg-slate-900 border border-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-300">
-                      {{ lead.track }} • {{ lead.duration }}
+                    <span class="rounded bg-indigo-950 px-2 py-0.5 text-[10px] font-mono text-indigo-300 border border-indigo-800">
+                      {{ lead.track }}
                     </span>
+                    <span class="text-slate-400 text-[10px] block mt-0.5">{{ lead.duration }}</span>
                   </td>
                   <td class="py-3.5 px-4">
                     <button
                       @click="cycleLeadStatus(lead)"
                       :class="[
-                        'rounded-full px-2.5 py-0.5 text-[10px] font-bold border transition-colors',
-                        lead.status === 'Enrolled'
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800/60'
-                          : lead.status === 'Contacted'
-                          ? 'bg-sky-950 text-sky-300 border-sky-800/60'
-                          : 'bg-amber-950 text-amber-300 border-amber-800/60'
+                        'rounded-full px-2.5 py-0.5 text-[10px] font-semibold border transition-colors',
+                        lead.status === 'New' ? 'bg-amber-950 text-amber-300 border-amber-800' :
+                        lead.status === 'Contacted' ? 'bg-sky-950 text-sky-300 border-sky-800' :
+                        'bg-emerald-950 text-emerald-300 border-emerald-800'
                       ]"
                     >
                       {{ lead.status }} ↻
@@ -587,11 +557,10 @@
                   </td>
                   <td class="py-3.5 px-4 text-right">
                     <a
-                      :href="`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`"
-                      target="_blank"
-                      class="inline-flex items-center gap-1 rounded-lg bg-emerald-600/20 border border-emerald-500/30 hover:bg-emerald-600/40 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 transition-colors"
+                      :href="`tel:${lead.phone}`"
+                      class="rounded-lg bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors inline-block"
                     >
-                      WhatsApp
+                      Call Student
                     </a>
                   </td>
                 </tr>
@@ -600,130 +569,133 @@
           </div>
         </div>
 
-        <!-- TAB 2: Batches & Cohorts -->
-        <div v-else-if="adminTab === 'Batches & Cohorts'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-5">
+        <!-- SUBTAB 5: Batches & Cohorts -->
+        <div v-else-if="superAdminTab === 'Batches & Cohorts'" class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-6">
           <div class="flex items-center justify-between">
             <div>
-              <h3 class="text-lg font-bold text-white">Active Cohorts & Capacity Matrix</h3>
-              <p class="text-xs text-slate-400">Monitor batch enrollment limits and assigned mentors</p>
+              <h3 class="text-lg font-bold text-white">Active & Upcoming Industrial Cohorts</h3>
+              <p class="text-xs text-slate-400">Manage 3-month and 6-month industrial internship batches</p>
             </div>
-            <button class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-semibold text-white">
-              + Launch New Batch
+            <button
+              @click="$emit('open-enroll')"
+              class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-bold text-white transition-colors shadow-md"
+            >
+              + Create New Cohort
             </button>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div v-for="(batch, idx) in demoBatches" :key="idx" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div
+              v-for="(batch, idx) in demoBatches"
+              :key="idx"
+              class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3.5"
+            >
               <div class="flex items-center justify-between">
-                <span class="font-mono text-xs font-bold text-indigo-400 bg-indigo-950/80 border border-indigo-800/60 px-2.5 py-1 rounded-lg">
+                <span class="rounded bg-indigo-950 border border-indigo-800 px-2 py-0.5 text-[10px] font-mono font-bold text-indigo-300">
                   {{ batch.code }}
                 </span>
-                <span class="rounded-full bg-emerald-950 border border-emerald-800/50 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400">
+                <span class="rounded-full bg-emerald-950 border border-emerald-800 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
                   {{ batch.status }}
                 </span>
               </div>
               <div>
-                <h4 class="text-base font-bold text-white">{{ batch.track }}</h4>
-                <p class="text-xs text-slate-400 mt-0.5">Tutor: {{ batch.tutor }} • Timing: {{ batch.timing }}</p>
+                <h4 class="text-sm font-bold text-white">{{ batch.track }}</h4>
+                <p class="text-slate-400 text-[11px] mt-0.5">Faculty: {{ batch.tutor }}</p>
+                <p class="text-slate-400 text-[11px]">Timing: {{ batch.timing }}</p>
               </div>
-
-              <!-- Capacity Meter -->
-              <div>
-                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
-                  <span>Enrolled Seats</span>
-                  <span class="font-bold text-white">{{ batch.enrolled }} / {{ batch.capacity }}</span>
-                </div>
-                <div class="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-400"
-                    :style="{ width: `${(batch.enrolled / batch.capacity) * 100}%` }"
-                  ></div>
-                </div>
+              <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                <span class="text-slate-400">Capacity: <strong>{{ batch.enrolled }} / {{ batch.capacity }} Enrolled</strong></span>
+                <span class="text-emerald-400 font-bold">Seats Open</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- TAB 3: Credential Issuer -->
-        <div v-else class="glass-panel rounded-3xl p-6 border border-slate-800/80 space-y-6">
+        <!-- SUBTAB 6: Credential Issuer -->
+        <div v-else-if="superAdminTab === 'Credential Issuer'" class="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800/80 space-y-6">
           <div>
-            <h3 class="text-lg font-bold text-white">Cryptographic Certificate Generator</h3>
-            <p class="text-xs text-slate-400">Instantly generate verifiable credentials published to the public verification endpoint</p>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <span>📜 Issue Verifiable Industrial Internship Certificate</span>
+              <span class="rounded bg-sky-950 text-sky-400 border border-sky-800/60 px-2 py-0.2 text-[10px] font-bold">
+                QR Ledger Registered
+              </span>
+            </h3>
+            <p class="text-xs text-slate-400">Issue an instant blockchain/QR-verifiable credential with project defense metadata</p>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Issue Form -->
-            <form @submit.prevent="generateCertificate" class="space-y-4 text-xs">
+          <form @submit.prevent="generateCertificate" class="space-y-4 text-xs max-w-2xl">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-slate-300 font-semibold mb-1">Student Full Name</label>
-                <input v-model="newCert.student_name" required placeholder="e.g. Aarav Mehta" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
+                <label class="block text-slate-300 font-semibold mb-1">Student Full Name *</label>
+                <input
+                  v-model="newCert.student_name"
+                  required
+                  placeholder="e.g. Aarav Mehta"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white"
+                />
               </div>
+
               <div>
-                <label class="block text-slate-300 font-semibold mb-1">College / University</label>
-                <input v-model="newCert.college_name" required placeholder="e.g. Delhi Technological University (DTU)" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
+                <label class="block text-slate-300 font-semibold mb-1">College / University *</label>
+                <input
+                  v-model="newCert.college_name"
+                  required
+                  placeholder="e.g. Delhi Technological University (DTU)"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white"
+                />
               </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-slate-300 font-semibold mb-1">Program Duration</label>
-                  <select v-model="newCert.duration" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white">
-                    <option value="6 Months (320 Industrial Hours)">6 Months (320 Hours)</option>
-                    <option value="3 Months (160 Industrial Hours)">3 Months (160 Hours)</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-slate-300 font-semibold mb-1">Performance Grade</label>
-                  <select v-model="newCert.grade" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white">
-                    <option value="Distinction (Grade A+)">Distinction (Grade A+)</option>
-                    <option value="Honors (Grade A)">Honors (Grade A)</option>
-                    <option value="First Class (Grade B+)">First Class (Grade B+)</option>
-                  </select>
-                </div>
-              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-slate-300 font-semibold mb-1">Capstone Project Title</label>
-                <input v-model="newCert.capstone_project" required placeholder="e.g. Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
+                <label class="block text-slate-300 font-semibold mb-1">Program Track & Hours *</label>
+                <input
+                  v-model="newCert.duration"
+                  required
+                  placeholder="6 Months (320 Industrial Hours)"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white"
+                />
               </div>
+
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Grade / Distinction *</label>
+                <select
+                  v-model="newCert.grade"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white"
+                >
+                  <option>Distinction (Grade A+)</option>
+                  <option>First Class Honors (Grade A)</option>
+                  <option>Passed with Merit (Grade B+)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Capstone Project Title *</label>
+              <input
+                v-model="newCert.capstone_project"
+                required
+                placeholder="e.g. Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase"
+                class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white"
+              />
+            </div>
+
+            <div class="pt-2">
               <button
                 type="submit"
-                class="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 py-2.5 font-bold text-white shadow-lg hover:from-indigo-500 hover:to-sky-400 transition-all"
+                class="rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 px-6 py-2.5 font-bold text-white shadow-lg transition-all"
               >
-                Sign & Publish Certificate to Ledger →
+                Register & Issue Official Credential →
               </button>
-            </form>
-
-            <!-- Certificate Live Preview -->
-            <div class="rounded-2xl border-2 border-indigo-500/40 bg-gradient-to-br from-slate-900 to-indigo-950/40 p-6 flex flex-col justify-between shadow-2xl">
-              <div>
-                <div class="flex items-center justify-between text-[11px] text-slate-400">
-                  <span class="font-mono text-indigo-400">ID: PTA-CERT-2026-8941</span>
-                  <span class="text-emerald-400 font-bold">✓ VERIFIED AUTHENTIC</span>
-                </div>
-                <h4 class="text-xl font-extrabold text-white mt-4">{{ newCert.student_name || 'Student Name' }}</h4>
-                <p class="text-xs text-slate-400">{{ newCert.college_name || 'University Name' }}</p>
-
-                <div class="mt-4 pt-4 border-t border-slate-800/80 space-y-2 text-xs">
-                  <p class="text-slate-300"><strong class="text-white">Track:</strong> Full-Stack Web Engineering</p>
-                  <p class="text-slate-300"><strong class="text-white">Duration:</strong> {{ newCert.duration }}</p>
-                  <p class="text-slate-300"><strong class="text-white">Grade:</strong> {{ newCert.grade }}</p>
-                  <p class="text-slate-300"><strong class="text-white">Capstone:</strong> {{ newCert.capstone_project }}</p>
-                </div>
-              </div>
-
-              <NuxtLink
-                to="/verify/PTA-CERT-2026-8941"
-                class="mt-6 text-center rounded-xl bg-slate-800 hover:bg-slate-700 py-2 text-xs font-semibold text-sky-400 transition-colors"
-              >
-                Inspect Public Verification Portal View →
-              </NuxtLink>
             </div>
-          </div>
+          </form>
         </div>
       </div>
 
       <!-- ============================================================ -->
-      <!-- 2. TUTOR WORKSPACE -->
+      <!-- 👨‍🏫 TUTOR WORKSPACE -->
       <!-- ============================================================ -->
-      <div v-else-if="activeRole === 'Tutor'" class="space-y-8">
+      <div v-else-if="currentView === 'tutor'" class="space-y-8">
         <!-- Live Classroom Card -->
         <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
@@ -735,7 +707,7 @@
             <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
               Today's Session: <strong>Building Real-Time Microservice Event Buses with Nuxt Nitro & Redis BullMQ</strong>.
             </p>
-            <span class="text-xs text-slate-400 block mt-2">Scheduled: 6:30 PM - 8:30 PM IST • Mentor: Alex Mercer</span>
+            <span class="text-xs text-slate-400 block mt-2">Scheduled: 6:30 PM - 8:30 PM IST • Lead Faculty</span>
           </div>
 
           <button class="whitespace-nowrap rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 px-6 py-3.5 text-xs sm:text-sm font-bold text-white shadow-xl shadow-emerald-600/30 transition-all hover:scale-105">
@@ -824,7 +796,7 @@
       </div>
 
       <!-- ============================================================ -->
-      <!-- 3. STUDENT WORKSPACE -->
+      <!-- 🎓 STUDENT WORKSPACE (DEFAULT FOR STUDENTS & PREVIEW) -->
       <!-- ============================================================ -->
       <div v-else class="space-y-8">
         <!-- Student Identity & Progress Header -->
@@ -872,7 +844,7 @@
             <button
               @click="generateVivaQuestion"
               :disabled="isGeneratingViva"
-              class="whitespace-nowrap rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all"
+              class="whitespace-nowrap rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all disabled:opacity-50"
             >
               {{ isGeneratingViva ? 'Examiner is thinking...' : 'Ask Me A Viva Question 🎯' }}
             </button>
@@ -948,30 +920,26 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3 hover:border-slate-700 transition-colors">
-              <div class="h-10 w-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-lg">📄</div>
-              <div>
-                <h4 class="font-bold text-white text-sm">IEEE Project Report (DOCX)</h4>
-                <p class="text-[11px] text-slate-400 mt-1">60-page pre-written academic thesis with ER diagrams, sequence flows, and verified source code.</p>
-              </div>
-              <button class="text-xs text-indigo-400 font-bold hover:text-indigo-300 block pt-1">Download DOCX File ↓</button>
+              <span class="text-2xl">📑</span>
+              <h4 class="font-bold text-white text-sm">Industrial Internship Report</h4>
+              <p class="text-slate-400 text-xs">70+ page IEEE standard documentation complete with architecture diagrams, DFD, and test results.</p>
+              <NuxtLink to="/synopsis" class="text-emerald-400 hover:underline font-semibold block pt-1">
+                Generate Project Synopsis Free →
+              </NuxtLink>
             </div>
 
             <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3 hover:border-slate-700 transition-colors">
-              <div class="h-10 w-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-lg">📊</div>
-              <div>
-                <h4 class="font-bold text-white text-sm">Viva Presentation (PPTX)</h4>
-                <p class="text-[11px] text-slate-400 mt-1">18-slide architectural walkthrough customized for college external viva defenses.</p>
-              </div>
-              <button class="text-xs text-sky-400 font-bold hover:text-sky-300 block pt-1">Download PPTX Deck ↓</button>
+              <span class="text-2xl">📜</span>
+              <h4 class="font-bold text-white text-sm">Weekly Daily Diary & Timesheet</h4>
+              <p class="text-slate-400 text-xs">Weekly logbook covering 320 logged industrial hours signed by senior industry mentors.</p>
+              <span class="text-indigo-400 font-semibold block pt-1">Verified & Digitally Signed ✓</span>
             </div>
 
             <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3 hover:border-slate-700 transition-colors">
-              <div class="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">🛡️</div>
-              <div>
-                <h4 class="font-bold text-white text-sm">Industrial NOC & LOR Letter</h4>
-                <p class="text-[11px] text-slate-400 mt-1">Official Palantir Tech Academy seal letter certifying 320 completed industrial training hours.</p>
-              </div>
-              <button class="text-xs text-emerald-400 font-bold hover:text-emerald-300 block pt-1">Download PDF Letter ↓</button>
+              <span class="text-2xl">🎓</span>
+              <h4 class="font-bold text-white text-sm">Viva Voce Defense Slide Deck</h4>
+              <p class="text-slate-400 text-xs">15-slide PowerPoint deck tailored for external university evaluators with system architecture breakdowns.</p>
+              <span class="text-indigo-400 font-semibold block pt-1">Pre-built PPT Template Included ✓</span>
             </div>
           </div>
         </div>
@@ -979,115 +947,126 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- MODALS: PROMOTION/HIRING & CUSTOM POWERS MODAL -->
+    <!-- MODALS: PROMOTION / HIRING & PERMISSIONS -->
     <!-- ============================================================ -->
 
-    <!-- 1. Promote / Hire Modal -->
-    <div v-if="isPromoteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div @click="isPromoteModalOpen = false" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
-      <div class="relative w-full max-w-lg rounded-3xl border border-amber-500/40 bg-slate-900 p-6 sm:p-8 shadow-2xl text-slate-100 space-y-5">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div>
-            <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Super Admin Master Action</span>
-            <h3 class="text-lg font-bold text-white mt-0.5">Promote / Hire User: {{ selectedUser?.full_name }}</h3>
-          </div>
-          <button @click="isPromoteModalOpen = false" class="text-slate-400 hover:text-white">✕</button>
+    <!-- Promotion / Hiring Modal -->
+    <div
+      v-if="isPromoteModalOpen && selectedUser"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+      @click.self="isPromoteModalOpen = false"
+    >
+      <div class="relative w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/95 p-6 shadow-2xl backdrop-blur-xl space-y-5">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span>🚀 Promote & Hire {{ selectedUser.full_name }}</span>
+          </h3>
+          <p class="text-xs text-slate-400">Transition user role from {{ selectedUser.role }} to another role or hire as Internal Developer</p>
         </div>
 
         <div class="space-y-4 text-xs">
           <div>
-            <label class="block font-semibold text-slate-300 mb-1">Target Role Transition</label>
-            <select v-model="targetRole" class="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white">
-              <option value="developer">Internal Software Developer (Hired Employee)</option>
-              <option value="tutor">Tutor / Technical Mentor</option>
+            <label class="block text-slate-300 font-semibold mb-1">Target Role</label>
+            <select
+              v-model="targetRole"
+              class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white"
+            >
+              <option value="developer">Internal Software Developer (Paid Hire)</option>
+              <option value="tutor">Faculty / Tutor</option>
+              <option value="employer">Partner Employer</option>
               <option value="admin">Operations Admin</option>
               <option value="student">Student / Intern</option>
             </select>
           </div>
 
-          <div>
-            <label class="block font-semibold text-slate-300 mb-1">Employment / Placement Status</label>
-            <select v-model="targetHiredStatus" class="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white">
-              <option value="hired_internal_developer">Hired as Internal Developer @ Palantir Academy</option>
-              <option value="placed_partner_employer">Placed at Partner Employer (ApexCloud)</option>
-              <option value="not_hired">Standard Active Role</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-300 mb-1">Monthly Salary / Stipend</label>
+          <div v-if="targetRole === 'developer'">
+            <label class="block text-slate-300 font-semibold mb-1">Monthly Salary / Compensation</label>
             <input
               v-model="targetSalary"
               placeholder="e.g. ₹45,000/month"
-              class="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white"
+              class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white"
             />
           </div>
 
-          <div class="rounded-xl border border-amber-900/40 bg-amber-950/20 p-3 text-[11px] text-amber-300">
-            💡 <strong>Promoting to Developer</strong> automatically updates their portal privileges and issues an internal employment letter.
+          <div class="pt-2 flex justify-end gap-3">
+            <button
+              @click="isPromoteModalOpen = false"
+              class="rounded-xl border border-slate-800 px-4 py-2 text-slate-400 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              @click="confirmPromotion"
+              class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 font-bold text-white shadow-md"
+            >
+              Confirm Role Transition
+            </button>
           </div>
-
-          <button
-            @click="confirmPromotion"
-            class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 py-2.5 font-bold text-white shadow-lg shadow-emerald-600/20 transition-all"
-          >
-            Confirm Promotion & Update Role →
-          </button>
         </div>
       </div>
     </div>
 
-    <!-- 2. Custom Permissions Modal -->
-    <div v-if="isPermissionsModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div @click="isPermissionsModalOpen = false" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
-      <div class="relative w-full max-w-md rounded-3xl border border-indigo-500/40 bg-slate-900 p-6 sm:p-8 shadow-2xl text-slate-100 space-y-5">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div>
-            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Granular Security Powers</span>
-            <h3 class="text-lg font-bold text-white mt-0.5">{{ selectedUser?.full_name }}</h3>
-          </div>
-          <button @click="isPermissionsModalOpen = false" class="text-slate-400 hover:text-white">✕</button>
+    <!-- Permissions Modal -->
+    <div
+      v-if="isPermissionsModalOpen && selectedUser"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+      @click.self="isPermissionsModalOpen = false"
+    >
+      <div class="relative w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/95 p-6 shadow-2xl backdrop-blur-xl space-y-5">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span>⚙️ Custom Powers for {{ selectedUser.full_name }}</span>
+          </h3>
+          <p class="text-xs text-slate-400">Grant or revoke granular system permissions</p>
         </div>
 
-        <div class="space-y-3.5 text-xs">
-          <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer hover:border-slate-700">
+        <div class="space-y-3 text-xs">
+          <label class="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-950 p-3 cursor-pointer">
             <input type="checkbox" v-model="selectedUserPermissions.can_grade" class="rounded text-indigo-600" />
             <div>
-              <span class="font-bold text-white block">Audit & Grade Student PRs</span>
-              <span class="text-[11px] text-slate-400">Allows approving pull requests and issuing grades</span>
+              <span class="font-bold text-white block">Grade PRs & Viva</span>
+              <span class="text-slate-400 text-[11px]">Can approve GitHub commits and mark final viva grades</span>
             </div>
           </label>
 
-          <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer hover:border-slate-700">
+          <label class="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-950 p-3 cursor-pointer">
             <input type="checkbox" v-model="selectedUserPermissions.can_issue_cert" class="rounded text-indigo-600" />
             <div>
-              <span class="font-bold text-white block">Issue Cryptographic Certificates</span>
-              <span class="text-[11px] text-slate-400">Allows generating public verifiable credentials</span>
+              <span class="font-bold text-white block">Issue Verified Certificates</span>
+              <span class="text-slate-400 text-[11px]">Can register completion credentials in the public registry</span>
             </div>
           </label>
 
-          <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer hover:border-slate-700">
+          <label class="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-950 p-3 cursor-pointer">
             <input type="checkbox" v-model="selectedUserPermissions.can_view_leads" class="rounded text-indigo-600" />
             <div>
               <span class="font-bold text-white block">View Inbound Leads CRM</span>
-              <span class="text-[11px] text-slate-400">Access to phone numbers and student inquiries</span>
+              <span class="text-slate-400 text-[11px]">Access student counseling telephone desk and lead statuses</span>
             </div>
           </label>
 
-          <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer hover:border-slate-700">
+          <label class="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-950 p-3 cursor-pointer">
             <input type="checkbox" v-model="selectedUserPermissions.can_hire" class="rounded text-indigo-600" />
             <div>
-              <span class="font-bold text-white block">Talent Pool Hiring Powers</span>
-              <span class="text-[11px] text-slate-400">Send job offers directly to top students</span>
+              <span class="font-bold text-white block">Direct Hiring Authority</span>
+              <span class="text-slate-400 text-[11px]">Can issue offer letters and convert students to paid internal roles</span>
             </div>
           </label>
 
-          <button
-            @click="savePermissions"
-            class="w-full mt-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 font-bold text-white shadow-lg shadow-indigo-600/30 transition-all"
-          >
-            Save Granted Powers
-          </button>
+          <div class="pt-2 flex justify-end gap-3">
+            <button
+              @click="isPermissionsModalOpen = false"
+              class="rounded-xl border border-slate-800 px-4 py-2 text-slate-400 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              @click="savePermissions"
+              class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 font-bold text-white shadow-md"
+            >
+              Save Privileges
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1100,11 +1079,35 @@ import { useAuth } from '~/composables/useAuth'
 
 defineEmits(['open-enroll'])
 
-const { user, isAuthModalOpen, loginAsDemoStudent, loginAsSuperAdmin } = useAuth()
+const { user, isProfileModalOpen, loginAsDemoStudent, loginAsSuperAdmin } = useAuth()
 
-const activeRole = ref('Super Admin')
-const adminTab = ref('Inbound Leads Pipeline')
-const superAdminTab = ref('User Directory & Role Hierarchy')
+// Role Detection
+const userRole = computed(() => {
+  if (!user.value) return 'guest'
+  if (user.value.email === 'extractionevolution@gmail.com') return 'super_admin'
+  return user.value.user_metadata?.role || 'student'
+})
+
+// Super admin preview mode (to see what interns see)
+const superAdminPreviewMode = ref(false)
+
+const currentView = computed(() => {
+  if (userRole.value === 'super_admin') {
+    return superAdminPreviewMode.value ? 'student' : 'super_admin'
+  }
+  if (userRole.value === 'tutor') return 'tutor'
+  return 'student'
+})
+
+const currentWorkspaceTitle = computed(() => {
+  if (userRole.value === 'super_admin') {
+    return superAdminPreviewMode.value ? 'Intern Workspace Preview' : 'Super Admin Command Hub'
+  }
+  if (userRole.value === 'tutor') return 'Faculty / Tutor Workspace'
+  return 'Student Learning & Viva Workspace'
+})
+
+const superAdminTab = ref('User Directory & Staff Hierarchy')
 const roleFilter = ref('all')
 const leadSearch = ref('')
 
@@ -1168,6 +1171,10 @@ const managedUsers = ref([
   }
 ])
 
+const isMasterSuperAdmin = (u) => {
+  return u.role === 'super_admin' || u.email === 'extractionevolution@gmail.com' || (user.value && u.email === user.value.email && userRole.value === 'super_admin')
+}
+
 const filteredManagedUsers = computed(() => {
   if (roleFilter.value === 'all') return managedUsers.value
   return managedUsers.value.filter(u => u.role === roleFilter.value)
@@ -1175,6 +1182,10 @@ const filteredManagedUsers = computed(() => {
 
 // Toggle user pause / active status
 const toggleUserPause = async (u) => {
+  if (isMasterSuperAdmin(u)) {
+    alert('Protection Notice: The Master Super Admin account cannot be paused.')
+    return
+  }
   u.status = u.status === 'active' ? 'paused' : 'active'
   try {
     await fetch('/api/admin/users', {
@@ -1195,6 +1206,10 @@ const targetHiredStatus = ref('hired_internal_developer')
 const targetSalary = ref('₹45,000/month')
 
 const openPromoteModal = (u) => {
+  if (isMasterSuperAdmin(u)) {
+    alert('Protection Notice: The Master Super Admin account cannot be demoted or promoted.')
+    return
+  }
   selectedUser.value = u
   targetRole.value = u.role === 'student' ? 'developer' : u.role
   targetHiredStatus.value = u.role === 'student' ? 'hired_internal_developer' : 'not_hired'
@@ -1265,7 +1280,7 @@ const createNewUser = () => {
   })
 
   alert(`Account provisioned for ${newUserForm.value.full_name} (${newUserForm.value.role})!`)
-  superAdminTab.value = 'User Directory & Role Hierarchy'
+  superAdminTab.value = 'User Directory & Staff Hierarchy'
 }
 
 // Candidate Students for Direct Hiring
@@ -1302,10 +1317,10 @@ const hireStudentAsDeveloper = (student) => {
   })
 
   alert(`🎉 Congratulations! ${student.name} has been hired as an Internal Junior Developer at Palantir Tech Academy (₹45,000/month)!`)
-  superAdminTab.value = 'User Directory & Role Hierarchy'
+  superAdminTab.value = 'User Directory & Staff Hierarchy'
 }
 
-// Normal Admin State
+// Leads State (CRM)
 const leads = ref([
   {
     name: 'Rohan Verma',

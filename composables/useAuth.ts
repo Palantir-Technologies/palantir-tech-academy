@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import { ref } from 'vue'
 
 let supabaseBrowserClient: any = null
 
@@ -9,7 +8,26 @@ export const useAuth = () => {
   const session = useState<any>('auth_session', () => null)
   const isLoading = useState<boolean>('auth_loading', () => false)
   const isAuthModalOpen = useState<boolean>('auth_modal_open', () => false)
+  const isProfileModalOpen = useState<boolean>('profile_modal_open', () => false)
   const authError = useState<string | null>('auth_error', () => null)
+
+  const persistUserToStorage = (userData: any) => {
+    if (process.client) {
+      if (userData) {
+        try {
+          localStorage.setItem('pta_auth_user', JSON.stringify(userData))
+        } catch (e) {
+          console.warn('Could not save user to storage:', e)
+        }
+      } else {
+        try {
+          localStorage.removeItem('pta_auth_user')
+        } catch (e) {
+          console.warn('Could not remove user from storage:', e)
+        }
+      }
+    }
+  }
 
   const getClient = () => {
     if (process.server) return null
@@ -24,23 +42,53 @@ export const useAuth = () => {
       // Auto-listen to auth state changes in browser
       supabaseBrowserClient.auth.onAuthStateChange((_event: any, currentSession: any) => {
         session.value = currentSession
-        user.value = currentSession?.user || null
+        if (currentSession?.user) {
+          user.value = {
+            ...currentSession.user,
+            user_metadata: {
+              ...currentSession.user.user_metadata,
+              role: currentSession.user.email === 'extractionevolution@gmail.com' ? 'super_admin' : (currentSession.user.user_metadata?.role || 'student')
+            }
+          }
+          persistUserToStorage(user.value)
+        }
       })
     }
     return supabaseBrowserClient
   }
 
-  // Initialize session in browser
+  // Initialize session in browser with instant localStorage hydration
   const initAuth = async () => {
     if (process.server) return
+
+    // 1. Instant synchronous hydration from localStorage to prevent navbar flickering on home page
+    if (!user.value && process.client) {
+      try {
+        const stored = localStorage.getItem('pta_auth_user')
+        if (stored) {
+          user.value = JSON.parse(stored)
+        }
+      } catch (e) {
+        console.warn('Error reading stored user:', e)
+      }
+    }
+
     const client = getClient()
     if (!client) return
 
     try {
       const { data } = await client.auth.getSession()
-      if (data?.session) {
+      if (data?.session?.user) {
         session.value = data.session
-        user.value = data.session.user
+        const isSuperAdmin = data.session.user.email === 'extractionevolution@gmail.com'
+        user.value = {
+          ...data.session.user,
+          user_metadata: {
+            ...data.session.user.user_metadata,
+            role: isSuperAdmin ? 'super_admin' : (data.session.user.user_metadata?.role || 'student')
+          }
+        }
+        persistUserToStorage(user.value)
       }
     } catch (err) {
       console.warn('Auth session check:', err)
@@ -58,8 +106,16 @@ export const useAuth = () => {
       const { data, error } = await client.auth.signInWithPassword({ email, password })
       if (error) throw error
 
-      user.value = data.user
+      const isSuperAdmin = data.user.email === 'extractionevolution@gmail.com'
+      user.value = {
+        ...data.user,
+        user_metadata: {
+          ...data.user.user_metadata,
+          role: isSuperAdmin ? 'super_admin' : (data.user.user_metadata?.role || 'student')
+        }
+      }
       session.value = data.session
+      persistUserToStorage(user.value)
       isAuthModalOpen.value = false
       return { success: true }
     } catch (err: any) {
@@ -78,6 +134,9 @@ export const useAuth = () => {
 
     try {
       if (!client) throw new Error('Supabase client not initialized')
+      const isSuperAdmin = email.trim().toLowerCase() === 'extractionevolution@gmail.com'
+      const assignedRole = isSuperAdmin ? 'super_admin' : 'student'
+
       const { data, error } = await client.auth.signUp({
         email,
         password,
@@ -85,14 +144,23 @@ export const useAuth = () => {
           data: {
             full_name: metadata.full_name,
             college_name: metadata.college_name || 'Engineering College',
-            role: 'student'
+            role: assignedRole
           }
         }
       })
       if (error) throw error
 
-      user.value = data.user
-      session.value = data.session
+      if (data.user) {
+        user.value = {
+          ...data.user,
+          user_metadata: {
+            ...data.user.user_metadata,
+            role: assignedRole
+          }
+        }
+        session.value = data.session
+        persistUserToStorage(user.value)
+      }
       isAuthModalOpen.value = false
       return { success: true, user: data.user }
     } catch (err: any) {
@@ -126,18 +194,86 @@ export const useAuth = () => {
     }
   }
 
+  // Update Profile Details (Full Name, College, Phone)
+  const updateProfile = async (details: { full_name?: string; college_name?: string; phone?: string }) => {
+    isLoading.value = true
+    const client = getClient()
+    try {
+      if (client && session.value) {
+        const { data, error } = await client.auth.updateUser({
+          data: {
+            ...user.value?.user_metadata,
+            full_name: details.full_name || user.value?.user_metadata?.full_name,
+            college_name: details.college_name !== undefined ? details.college_name : user.value?.user_metadata?.college_name,
+            phone: details.phone !== undefined ? details.phone : user.value?.user_metadata?.phone
+          }
+        })
+        if (error) throw error
+        if (data?.user) {
+          user.value = {
+            ...data.user,
+            user_metadata: {
+              ...user.value?.user_metadata,
+              ...data.user.user_metadata
+            }
+          }
+          persistUserToStorage(user.value)
+        }
+      } else {
+        // Update local state if in demo mode
+        user.value = {
+          ...user.value,
+          user_metadata: {
+            ...user.value?.user_metadata,
+            full_name: details.full_name || user.value?.user_metadata?.full_name,
+            college_name: details.college_name !== undefined ? details.college_name : user.value?.user_metadata?.college_name,
+            phone: details.phone !== undefined ? details.phone : user.value?.user_metadata?.phone
+          }
+        }
+        persistUserToStorage(user.value)
+      }
+      return { success: true, message: 'Profile updated successfully!' }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to update profile.' }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Update Password
+  const updatePassword = async (newPassword: string) => {
+    isLoading.value = true
+    const client = getClient()
+    try {
+      if (!newPassword || newPassword.length < 6) {
+        throw new Error('Password must be at least 6 characters long.')
+      }
+      if (client && session.value) {
+        const { error } = await client.auth.updateUser({ password: newPassword })
+        if (error) throw error
+      }
+      return { success: true, message: 'Password updated successfully!' }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Failed to update password.' }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   // Sign Out
   const signOut = async () => {
     isLoading.value = true
     const client = getClient()
     try {
       if (client) await client.auth.signOut()
-      user.value = null
-      session.value = null
     } catch (err) {
       console.warn('Sign out error:', err)
     } finally {
+      user.value = null
+      session.value = null
+      persistUserToStorage(null)
       isLoading.value = false
+      if (isProfileModalOpen.value) isProfileModalOpen.value = false
     }
   }
 
@@ -154,9 +290,11 @@ export const useAuth = () => {
         enrollment_no: 'PTA2026001',
         attendance: 94,
         grade: 'Distinction (A+)',
-        role: 'student'
+        role: 'student',
+        phone: '+91 98765 43210'
       }
     }
+    persistUserToStorage(user.value)
     isAuthModalOpen.value = false
   }
 
@@ -168,6 +306,8 @@ export const useAuth = () => {
       user_metadata: {
         full_name: 'Chief Super Admin (Palantir)',
         role: 'super_admin',
+        college_name: 'Palantir Tech Academy HQ',
+        phone: '+91 98700 00001',
         permissions: {
           can_grade: true,
           can_issue_cert: true,
@@ -177,6 +317,7 @@ export const useAuth = () => {
         }
       }
     }
+    persistUserToStorage(user.value)
     isAuthModalOpen.value = false
   }
 
@@ -185,14 +326,16 @@ export const useAuth = () => {
     session,
     isLoading,
     isAuthModalOpen,
+    isProfileModalOpen,
     authError,
     initAuth,
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
+    updateProfile,
+    updatePassword,
     signOut,
     loginAsDemoStudent,
     loginAsSuperAdmin
   }
 }
-

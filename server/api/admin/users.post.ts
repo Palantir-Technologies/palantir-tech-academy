@@ -34,6 +34,17 @@ export default defineEventHandler(async (event) => {
     }
 
     if (action === 'update_status') {
+      // Security Check: Master Super Admin cannot be paused
+      const { data: targetUser } = await supabase
+        .from('user_profiles')
+        .select('email, role')
+        .eq('id', userId)
+        .single()
+
+      if (targetUser?.role === 'super_admin' || targetUser?.email === 'extractionevolution@gmail.com') {
+        return { success: false, error: 'Master Super Admin account cannot be paused.' }
+      }
+
       const { data, error } = await supabase
         .from('user_profiles')
         .update({ status })
@@ -44,6 +55,17 @@ export default defineEventHandler(async (event) => {
     }
 
     if (action === 'promote_demote') {
+      // Security Check: Master Super Admin cannot be altered or demoted
+      const { data: targetUser } = await supabase
+        .from('user_profiles')
+        .select('email, role')
+        .eq('id', userId)
+        .single()
+
+      if (targetUser?.role === 'super_admin' || targetUser?.email === 'extractionevolution@gmail.com') {
+        return { success: false, error: 'Master Super Admin cannot be demoted or altered.' }
+      }
+
       const updatePayload: any = { role }
       if (hiredStatus) updatePayload.hired_status = hiredStatus
       if (salary) updatePayload.salary_or_stipend = salary

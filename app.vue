@@ -28,6 +28,9 @@
 
     <!-- Student Auth Modal (Google & Email/Password) -->
     <AuthModal />
+
+    <!-- User Profile & Security Settings Modal -->
+    <ProfileModal />
   </div>
 </template>
 

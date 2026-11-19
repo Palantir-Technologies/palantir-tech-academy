@@ -37,7 +37,7 @@
           to="/portal"
           class="rounded-xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800 px-7 py-3.5 text-sm font-semibold text-slate-200 transition-colors shadow-sm"
         >
-          Explore Role Portals (Admin / Tutor / Student)
+          Go to Portal Dashboard →
         </NuxtLink>
       </div>
 

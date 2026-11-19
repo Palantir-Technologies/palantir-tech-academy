@@ -30,29 +30,46 @@
           <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           Verify Cert
         </NuxtLink>
-        <NuxtLink to="/portal" class="text-indigo-300 hover:text-white transition-colors bg-indigo-950/60 border border-indigo-800/50 px-3 py-1.5 rounded-lg text-xs font-semibold">
-          Role Portals
+        <NuxtLink to="/portal" class="text-indigo-300 hover:text-white transition-colors bg-indigo-950/60 border border-indigo-800/50 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+          <span>⚡ Portal Dashboard</span>
         </NuxtLink>
       </nav>
 
       <!-- Auth Actions -->
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2 sm:gap-3">
         <!-- If Logged In -->
         <div v-if="user" class="flex items-center gap-2">
-          <NuxtLink
-            to="/portal"
-            class="flex items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-950/40 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-900/40 transition-colors"
+          <!-- Profile & Settings Trigger -->
+          <button
+            @click="isProfileModalOpen = true"
+            title="Edit Profile & Change Password"
+            class="flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-950/60 hover:bg-indigo-900/60 px-2.5 py-1.5 text-xs font-semibold text-white transition-all hover:scale-105"
           >
-            <div class="h-6 w-6 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-[11px] text-white">
+            <div class="h-6 w-6 rounded-full bg-gradient-to-r from-indigo-500 to-sky-400 flex items-center justify-center font-bold text-[11px] text-white">
               {{ (user.user_metadata?.full_name || user.email || 'U').charAt(0).toUpperCase() }}
             </div>
-            <span class="hidden sm:inline">{{ user.user_metadata?.full_name || user.email?.split('@')[0] }}</span>
+            <div class="text-left hidden sm:block">
+              <span class="block text-xs font-bold leading-tight">{{ user.user_metadata?.full_name || user.email?.split('@')[0] }}</span>
+              <span class="block text-[9px] text-indigo-300 font-mono leading-none">
+                {{ user.email === 'extractionevolution@gmail.com' ? '👑 Super Admin' : (user.user_metadata?.role || 'Intern') }}
+              </span>
+            </div>
+            <span class="text-slate-400 text-[10px] hidden sm:inline">⚙️</span>
+          </button>
+
+          <!-- Dashboard Link -->
+          <NuxtLink
+            to="/portal"
+            class="hidden md:inline-flex rounded-xl bg-slate-900 border border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+          >
+            Workspace
           </NuxtLink>
 
+          <!-- Sign Out Button -->
           <button
             @click="signOut"
             title="Sign Out"
-            class="rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors text-xs"
+            class="rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-slate-400 hover:text-rose-300 hover:bg-slate-800 transition-colors text-xs font-medium"
           >
             Sign Out
           </button>
@@ -79,9 +96,14 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 
 defineEmits(['open-enroll', 'open-auth'])
 
-const { user, signOut } = useAuth()
+const { user, isProfileModalOpen, initAuth, signOut } = useAuth()
+
+onMounted(() => {
+  initAuth()
+})
 </script>
