@@ -61,12 +61,12 @@ export default defineEventHandler(async (event) => {
           } else {
             return {
               success: false,
-              error: 'Invalid password. Please check your credentials or click "Access Master Dashboard" below.'
+              error: 'Invalid login credentials. Please check your email and password.'
             }
           }
         } else {
-          // No password hash was previously recorded (user changed password earlier in panel).
-          // Automatically save this password into user_profiles as the official Super Admin password!
+          // No password hash was previously recorded.
+          // Save this password into user_profiles as the official Super Admin password!
           await supabase
             .from('user_profiles')
             .update({
@@ -103,33 +103,16 @@ export default defineEventHandler(async (event) => {
           }
         }
       }
+      return {
+        success: false,
+        error: 'Invalid login credentials. Please check your email and password.'
+      }
     } catch (err: any) {
       console.warn('Super Admin lookup warning:', err)
-    }
-
-    // Safe fallback if database query times out
-    return {
-      success: true,
-      user: {
-        id: '00000000-0000-0000-0000-000000000001',
-        email: MASTER_SUPER_ADMIN_EMAIL,
-        role: 'authenticated',
-        aud: 'authenticated',
-        user_metadata: {
-          full_name: 'Chief Super Admin (Palantir)',
-          role: 'super_admin',
-          college_name: 'Palantir Tech Academy HQ',
-          phone: '+91 98700 00001',
-          permissions: {
-            can_grade: true,
-            can_issue_cert: true,
-            can_view_leads: true,
-            can_hire: true,
-            can_manage_users: true
-          }
-        }
-      },
-      token: 'pta_token_master_' + Date.now()
+      return {
+        success: false,
+        error: 'Authentication failed. Please verify your credentials and try again.'
+      }
     }
   }
 

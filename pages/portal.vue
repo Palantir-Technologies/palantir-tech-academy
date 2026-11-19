@@ -99,8 +99,21 @@
             </button>
           </div>
 
+          <!-- UNAUTHENTICATED GUEST SIDEBAR -->
+          <div v-if="!user" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-center space-y-3">
+            <span class="text-2xl block">🔒</span>
+            <p class="text-xs text-slate-300 font-semibold">Sign In Required</p>
+            <p class="text-[11px] text-slate-400">Please authenticate to view your console tools and dashboard.</p>
+            <button
+              @click="isAuthModalOpen = true"
+              class="w-full py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 font-bold text-white text-xs transition-colors shadow-md shadow-indigo-600/30"
+            >
+              Sign In Now →
+            </button>
+          </div>
+
           <!-- SUPER ADMIN SIDEBAR NAVIGATION -->
-          <div v-if="currentView === 'super_admin'" class="space-y-1.5">
+          <div v-else-if="currentView === 'super_admin'" class="space-y-1.5">
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 block mb-2">Master Controls</span>
 
             <button
@@ -219,9 +232,33 @@
       <!-- 🚀 RIGHT MAIN CONTENT PANEL -->
       <!-- ============================================================ -->
       <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
+        <!-- Guest / Unauthenticated Prompt Screen -->
+        <div
+          v-if="!user"
+          class="rounded-3xl border border-indigo-900/60 bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-950 p-8 sm:p-12 text-center space-y-4 shadow-2xl my-4"
+        >
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 text-3xl">
+            🔒
+          </div>
+          <div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-white">Palantir Academy Workspace Access</h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-2 max-w-md mx-auto">
+              Please sign in with your authorized email and password to access your student projects, verified certificates, faculty desk, or Super Admin command hub.
+            </p>
+          </div>
+          <div class="pt-3">
+            <button
+              @click="isAuthModalOpen = true"
+              class="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-105"
+            >
+              Sign In to Your Account →
+            </button>
+          </div>
+        </div>
+
         <!-- Super Admin Preview Banner -->
         <div
-          v-if="userRole === 'super_admin' && superAdminPreviewMode"
+          v-else-if="userRole === 'super_admin' && superAdminPreviewMode"
           class="rounded-2xl border border-amber-700/80 bg-amber-950/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs shadow-lg shadow-amber-950/30"
         >
           <div class="flex items-center gap-3">
@@ -242,7 +279,7 @@
         <!-- ============================================================ -->
         <!-- 👑 SUPER ADMIN VIEW -->
         <!-- ============================================================ -->
-        <div v-if="currentView === 'super_admin'" class="space-y-6">
+        <div v-else-if="currentView === 'super_admin'" class="space-y-6">
           <!-- KPI Metrics Ribbon (Responsive 2x2 or 4x1) -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-amber-500/30 hover:border-amber-500/50 transition-all">
@@ -1700,7 +1737,7 @@ import { useCourses } from '~/composables/useCourses'
 
 defineEmits(['open-enroll'])
 
-const { user, isProfileModalOpen, loginAsDemoStudent, loginAsSuperAdmin } = useAuth()
+const { user, isAuthModalOpen, isProfileModalOpen } = useAuth()
 const { settings: globalSettings, updateSettings, resetToDefault, isSaving: isSavingBranding } = useSiteSettings()
 const {
   courses,
@@ -2002,6 +2039,9 @@ const handleDeleteCourse = async (course) => {
 onMounted(() => {
   initCourses()
   loadManagedUsers()
+  if (!user.value) {
+    isAuthModalOpen.value = true
+  }
 })
 
 const isMasterSuperAdmin = (u) => {

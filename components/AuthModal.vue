@@ -48,21 +48,9 @@
 
       <!-- Error Alert -->
       <div v-if="authError" class="mb-4 rounded-xl border border-red-900/60 bg-red-950/40 p-3 text-xs text-red-300">
-        <div class="flex items-start gap-2">
+        <div class="flex items-center gap-2">
           <span class="text-base leading-none">⚠️</span>
-          <div class="flex-1">
-            <span>{{ authError }}</span>
-            <div v-if="form.email.toLowerCase().includes('extractionevolution')" class="mt-2 pt-2 border-t border-red-900/40 flex items-center justify-between">
-              <span class="text-[11px] text-amber-300">Super Admin instant access:</span>
-              <button
-                type="button"
-                @click="loginAsSuperAdmin"
-                class="text-[11px] font-bold text-amber-400 hover:text-amber-300 underline"
-              >
-                Access Master Dashboard →
-              </button>
-            </div>
-          </div>
+          <span class="flex-1 font-medium">{{ authError }}</span>
         </div>
       </div>
 
@@ -143,22 +131,6 @@
           {{ isLoading ? 'Authenticating...' : mode === 'signin' ? 'Sign In to Dashboard' : 'Create Student Account' }}
         </button>
       </form>
-
-      <!-- Instant Demo Bypass Buttons -->
-      <div class="mt-5 pt-4 border-t border-slate-800/80 space-y-2 text-center">
-        <button
-          @click="loginAsSuperAdmin"
-          class="text-xs text-amber-400 hover:text-amber-300 font-semibold flex items-center justify-center gap-1.5 mx-auto transition-colors"
-        >
-          <span>👑 Master Login as Super Admin (extractionevolution@gmail.com)</span> →
-        </button>
-        <button
-          @click="loginAsDemoStudent"
-          class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center justify-center gap-1 mx-auto transition-colors"
-        >
-          <span>🚀 Instant Preview as Demo Student (Aarav Mehta)</span> →
-        </button>
-      </div>
     </div>
   </div>
 </template>
@@ -173,9 +145,7 @@ const {
   authError,
   signInWithEmail,
   signUpWithEmail,
-  signInWithGoogle,
-  loginAsDemoStudent,
-  loginAsSuperAdmin
+  signInWithGoogle
 } = useAuth()
 
 const mode = ref('signin')

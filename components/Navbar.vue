@@ -51,7 +51,12 @@
           <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           Verify Cert
         </NuxtLink>
-        <NuxtLink to="/portal" class="hover:text-indigo-400 transition-colors">
+        <NuxtLink
+          v-if="user"
+          to="/portal"
+          class="hover:text-indigo-300 transition-colors flex items-center gap-1.5 font-semibold text-indigo-400"
+        >
+          <span class="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
           Dashboard
         </NuxtLink>
       </nav>
@@ -161,13 +166,31 @@
           </NuxtLink>
         </div>
 
+        <!-- If Logged In on Mobile -->
         <NuxtLink
+          v-if="user"
           to="/portal"
           @click="isMobileNavOpen = false"
           class="block rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 p-3 text-center text-xs font-bold text-white shadow-md shadow-indigo-600/30"
         >
           Open Dashboard →
         </NuxtLink>
+
+        <!-- If Not Logged In on Mobile -->
+        <div v-else class="pt-1 flex gap-2">
+          <button
+            @click="isMobileNavOpen = false; $emit('open-auth')"
+            class="flex-1 rounded-xl border border-slate-700/80 bg-slate-900 py-2.5 text-center text-xs font-semibold text-slate-200 hover:bg-slate-800"
+          >
+            Sign In
+          </button>
+          <button
+            @click="isMobileNavOpen = false; $emit('open-enroll')"
+            class="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 py-2.5 text-center text-xs font-bold text-white shadow-md shadow-indigo-600/25"
+          >
+            Apply Now
+          </button>
+        </div>
       </div>
     </Transition>
   </header>
