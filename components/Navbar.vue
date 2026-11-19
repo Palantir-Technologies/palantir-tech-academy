@@ -41,6 +41,7 @@
       <!-- Desktop Nav -->
       <nav class="hidden md:flex items-center gap-5 lg:gap-6 text-xs sm:text-sm font-medium text-slate-300">
         <NuxtLink to="/#programs" class="hover:text-indigo-400 transition-colors">Programs</NuxtLink>
+        <NuxtLink to="/#courses" class="hover:text-indigo-400 transition-colors">Courses</NuxtLink>
         <NuxtLink to="/#curriculum" class="hover:text-indigo-400 transition-colors">Curriculum</NuxtLink>
         <NuxtLink to="/synopsis" class="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 transition-colors">
           <span>✨ AI Synopsis</span>
@@ -130,6 +131,13 @@
             📚 Programs
           </NuxtLink>
           <NuxtLink
+            to="/#courses"
+            @click="isMobileNavOpen = false"
+            class="rounded-xl border border-indigo-900/60 bg-indigo-950/40 p-3 text-indigo-300 hover:text-white hover:bg-slate-800 font-bold"
+          >
+            🎓 30 Courses
+          </NuxtLink>
+          <NuxtLink
             to="/#curriculum"
             @click="isMobileNavOpen = false"
             class="rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-slate-300 hover:text-white hover:bg-slate-800"
@@ -147,7 +155,7 @@
           <NuxtLink
             to="/verify/PTA-CERT-2026-8941"
             @click="isMobileNavOpen = false"
-            class="rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-slate-300 hover:text-white hover:bg-slate-800"
+            class="rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-slate-300 hover:text-white hover:bg-slate-800 col-span-2 text-center"
           >
             🔍 Verify Cert
           </NuxtLink>

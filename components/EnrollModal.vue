@@ -97,14 +97,17 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Preferred Technical Track</label>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Preferred Technical Track / Course</label>
             <select
               v-model="form.interested_track"
-              class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-slate-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-slate-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 truncate"
             >
               <option value="Full-Stack Web (Nuxt 3 / Node.js)">Full-Stack Web (Nuxt 3 & Node)</option>
               <option value="Applied AI & Generative AI Systems">Applied AI & Generative AI Systems</option>
               <option value="Cloud DevOps & Microservices">Cloud DevOps & Microservices</option>
+              <option v-for="c in courses" :key="c.id" :value="c.title">
+                {{ c.title }} — ₹{{ c.price.toLocaleString() }}
+              </option>
             </select>
           </div>
 
@@ -140,6 +143,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useCourses } from '~/composables/useCourses'
 
 defineProps({
   isOpen: Boolean
@@ -147,6 +151,7 @@ defineProps({
 
 const emit = defineEmits(['close'])
 
+const { courses } = useCourses()
 const isSubmitting = ref(false)
 const submitted = ref(false)
 

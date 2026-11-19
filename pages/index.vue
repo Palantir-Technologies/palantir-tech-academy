@@ -203,6 +203,9 @@
       </div>
     </section>
 
+    <!-- ==================== 30 SPECIALIZED COURSES CATALOG ==================== -->
+    <CourseCatalog @enroll="$emit('open-enroll')" />
+
     <!-- ==================== INTERACTIVE SYLLABUS EXPLORER ==================== -->
     <section id="curriculum" class="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 border-t border-slate-900">
       <div class="text-center max-w-3xl mx-auto mb-12">

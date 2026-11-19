@@ -265,15 +265,13 @@
               <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">Paid Junior Developers</p>
             </div>
 
-            <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 hover:border-slate-700 transition-all">
+            <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-indigo-500/30 hover:border-indigo-500/50 transition-all cursor-pointer" @click="superAdminTab = 'Courses & Curriculum'">
               <div class="flex items-center justify-between text-xs text-slate-400">
-                <span class="truncate">Faculty Tutors</span>
-                <span class="text-indigo-400 font-semibold bg-indigo-950/60 border border-indigo-800/40 px-1.5 py-0.2 rounded-full text-[9px]">Staff</span>
+                <span class="truncate">Courses & Tracks</span>
+                <span class="text-indigo-400 font-semibold bg-indigo-950/60 border border-indigo-800/40 px-1.5 py-0.2 rounded-full text-[9px]">Catalog</span>
               </div>
-              <div class="text-2xl sm:text-3xl font-extrabold text-indigo-400 mt-1.5">
-                {{ managedUsers.filter(u => u.role === 'tutor').length }}
-              </div>
-              <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">Assigned Grading Powers</p>
+              <div class="text-2xl sm:text-3xl font-extrabold text-indigo-400 mt-1.5">{{ courses.length }}</div>
+              <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">PHP, WP, Python, AI, etc.</p>
             </div>
 
             <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 hover:border-slate-700 transition-all">
@@ -299,6 +297,13 @@
             </div>
 
             <div class="flex items-center gap-2">
+              <button
+                v-if="superAdminTab === 'Courses & Curriculum'"
+                @click="openCourseModal(null)"
+                class="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 px-3.5 py-1.5 text-xs font-bold text-white whitespace-nowrap shadow-md transition-all"
+              >
+                + Add Course
+              </button>
               <button
                 v-if="superAdminTab === 'Inbound Leads (CRM)'"
                 @click="$emit('open-enroll')"
@@ -469,6 +474,151 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- ============================================================ -->
+          <!-- 🎓 SUBTAB: Courses & Curriculum Management (30+ Courses) -->
+          <!-- ============================================================ -->
+          <div v-else-if="superAdminTab === 'Courses & Curriculum'" class="space-y-6">
+            <!-- Header with Search, Filter & Add Course Button -->
+            <div class="glass-panel rounded-3xl p-5 sm:p-6 border border-slate-800/80 space-y-4">
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <span>🎓 30 Specialized Courses & Curriculum</span>
+                    <span class="rounded bg-indigo-950 text-indigo-400 border border-indigo-800/60 px-2 py-0.2 text-[10px] font-bold">
+                      Live Catalog & Pricing
+                    </span>
+                  </h3>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    Update student pricing, edit curriculum details, or grant specific course editing permissions to instructors
+                  </p>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                  <button
+                    @click="openCourseModal(null)"
+                    class="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 px-4 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/20 transition-all flex items-center gap-1.5"
+                  >
+                    <span>+</span>
+                    <span>Add New Course</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Search & Filter Controls -->
+              <div class="flex flex-col sm:flex-row items-center gap-3 pt-2 border-t border-slate-800/80">
+                <div class="relative flex-1 w-full">
+                  <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500 text-xs">🔍</span>
+                  <input
+                    v-model="courseSearch"
+                    type="text"
+                    placeholder="Search by course title (e.g. PHP, WordPress, Python, React...)"
+                    class="w-full rounded-xl border border-slate-800 bg-slate-900/90 pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/60"
+                  />
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <select
+                    v-model="courseCategoryFilter"
+                    class="rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none w-full sm:w-auto"
+                  >
+                    <option value="all">All Categories (30 Courses)</option>
+                    <option v-for="cat in uniqueCourseCategories" :key="cat" :value="cat">{{ cat }}</option>
+                  </select>
+
+                  <select
+                    v-model="coursePriceSort"
+                    class="rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none w-full sm:w-auto"
+                  >
+                    <option value="default">Default Order</option>
+                    <option value="low-high">Price: Low to High</option>
+                    <option value="high-low">Price: High to Low</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Courses Table -->
+            <div class="glass-panel rounded-3xl p-5 sm:p-6 border border-slate-800/80 space-y-4">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span>Showing <strong>{{ filteredCourses.length }}</strong> of {{ courses.length }} courses</span>
+                <span class="text-emerald-400 font-mono text-[11px]">✓ Real-time database sync</span>
+              </div>
+
+              <div class="overflow-x-auto rounded-2xl border border-slate-800/80">
+                <table class="w-full text-left text-xs text-slate-300">
+                  <thead class="border-b border-slate-800 bg-slate-900/80 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <tr>
+                      <th class="py-3.5 px-4">Course Track</th>
+                      <th class="py-3.5 px-4">Category & Level</th>
+                      <th class="py-3.5 px-4">Student Price</th>
+                      <th class="py-3.5 px-4">Duration</th>
+                      <th class="py-3.5 px-4">Authorized Editor</th>
+                      <th class="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60 bg-slate-950/40">
+                    <tr v-for="c in filteredCourses" :key="c.id" class="hover:bg-slate-900/40 transition-colors">
+                      <td class="py-3.5 px-4">
+                        <div class="font-bold text-white text-xs flex items-center gap-1.5">
+                          <span>{{ c.title }}</span>
+                          <span v-if="c.badge" class="rounded bg-indigo-950 text-indigo-300 border border-indigo-800/60 px-1.5 py-0.2 text-[9px] font-bold">
+                            {{ c.badge }}
+                          </span>
+                        </div>
+                        <div class="text-slate-400 text-[11px] font-mono mt-0.5">/courses/{{ c.slug }}</div>
+                      </td>
+
+                      <td class="py-3.5 px-4">
+                        <div class="text-slate-200 font-semibold">{{ c.category }}</div>
+                        <span class="text-[10px] text-slate-400">{{ c.level }}</span>
+                      </td>
+
+                      <td class="py-3.5 px-4">
+                        <div class="text-emerald-400 font-extrabold text-sm">₹{{ c.price.toLocaleString() }}</div>
+                        <span v-if="c.original_price" class="text-[10px] text-slate-500 line-through">₹{{ c.original_price.toLocaleString() }}</span>
+                      </td>
+
+                      <td class="py-3.5 px-4">
+                        <span class="rounded bg-slate-900 border border-slate-800 px-2 py-0.5 text-[11px] text-slate-300">
+                          {{ c.duration }}
+                        </span>
+                      </td>
+
+                      <td class="py-3.5 px-4">
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-[11px] font-medium text-amber-300 flex items-center gap-1">
+                            <span>✍️</span>
+                            <span class="truncate max-w-[150px]">{{ c.editor_name || c.editor_email }}</span>
+                          </span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 font-mono truncate max-w-[150px]">{{ c.editor_email }}</div>
+                      </td>
+
+                      <td class="py-3.5 px-4 text-right">
+                        <div class="flex items-center justify-end gap-1.5">
+                          <button
+                            @click="openCourseModal(c)"
+                            title="Edit course details & assign editors"
+                            class="rounded-lg bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 px-2.5 py-1 text-[11px] font-bold text-white transition-colors"
+                          >
+                            Edit ✏️
+                          </button>
+                          <button
+                            @click="handleDeleteCourse(c)"
+                            title="Delete this course"
+                            class="rounded-lg bg-rose-950/40 hover:bg-rose-900 border border-rose-800/60 px-2 py-1 text-[11px] font-bold text-rose-300 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -1079,7 +1229,7 @@
                 <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 space-y-3">
                   <div class="flex items-center justify-between">
                     <span class="font-bold text-white">PR #18: Supabase RLS policies and JWT session refresh</span>
-                    <span class="rounded bg-indigo-950 text-indigo-300 px-2 py-0.5 text-[10px] font-mono">Aarav Mehta</span>
+                    <span class="rounded bg-indigo-950 text-indigo-300 px-2 py-0.5 text-[10px] font-mono">{{ user?.user_metadata?.full_name || 'Intern PR' }}</span>
                   </div>
                   <p class="text-slate-400 text-xs">Fixed memory leaks in SSE data streaming channel and implemented multi-role guards.</p>
                   <div class="flex items-center gap-2 pt-2 border-t border-slate-800/80">
@@ -1107,10 +1257,10 @@
                 Intern ID: {{ user?.user_metadata?.enrollment_no || 'PTA2026001' }}
               </span>
               <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-                {{ user?.user_metadata?.full_name || 'Aarav Mehta' }}
+                {{ user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Enrolled Intern' }}
               </h2>
               <p class="text-xs sm:text-sm text-slate-300 mt-0.5">
-                {{ user?.user_metadata?.college_name || 'Delhi Technological University (DTU)' }} • 8th Semester • 6-Month Industrial Track
+                {{ user?.user_metadata?.college_name || 'Engineering Student' }} • 8th Semester • Industrial Track
               </p>
             </div>
 
@@ -1359,18 +1509,209 @@
         </div>
       </div>
     </div>
+
+    <!-- ============================================================ -->
+    <!-- 🎓 Course Creation & Editing Modal (Super Admin & Editors) -->
+    <!-- ============================================================ -->
+    <div
+      v-if="isCourseModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+      @click.self="isCourseModalOpen = false"
+    >
+      <div class="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-800 bg-slate-900/95 p-6 shadow-2xl backdrop-blur-xl space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>{{ courseModalMode === 'create' ? '➕ Create New Course Track' : '✏️ Edit Course & Assign Editor' }}</span>
+            </h3>
+            <p class="text-xs text-slate-400">Configure curriculum, pricing, duration, and authorized course editors</p>
+          </div>
+          <button @click="isCourseModalOpen = false" class="text-slate-400 hover:text-white text-lg">✕</button>
+        </div>
+
+        <form @submit.prevent="saveCourse" class="space-y-4 text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
+              <label class="block text-slate-300 font-semibold mb-1">Course Title *</label>
+              <input
+                v-model="courseForm.title"
+                required
+                placeholder="e.g. Full-Stack PHP & Laravel Development"
+                class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Category *</label>
+              <select
+                v-model="courseForm.category"
+                class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="Web Development">Web Development</option>
+                <option value="CMS & E-Commerce">CMS & E-Commerce</option>
+                <option value="Mobile Development">Mobile Development</option>
+                <option value="AI & Machine Learning">AI & Machine Learning</option>
+                <option value="Cloud & DevOps">Cloud & DevOps</option>
+                <option value="Cybersecurity">Cybersecurity</option>
+                <option value="Programming Languages">Programming Languages</option>
+                <option value="Data Science & Databases">Data Science & Databases</option>
+                <option value="Design & Creative">Design & Creative</option>
+                <option value="Testing & QA">Testing & QA</option>
+                <option value="Digital Marketing">Digital Marketing</option>
+                <option value="Embedded Systems">Embedded Systems</option>
+                <option value="Industrial Internship">Industrial Internship</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Experience Level</label>
+              <select
+                v-model="courseForm.level"
+                class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="All Levels">All Levels</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Beginner to Intermediate">Beginner to Intermediate</option>
+                <option value="Beginner to Advanced">Beginner to Advanced</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Intermediate to Advanced">Intermediate to Advanced</option>
+                <option value="Advanced">Advanced</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Student Price (₹ INR) *</label>
+              <input
+                v-model.number="courseForm.price"
+                type="number"
+                required
+                min="0"
+                placeholder="4999"
+                class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500 font-bold"
+              />
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Original Strike Price (₹ INR)</label>
+              <input
+                v-model.number="courseForm.original_price"
+                type="number"
+                min="0"
+                placeholder="9999"
+                class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Duration *</label>
+              <input
+                v-model="courseForm.duration"
+                required
+                placeholder="e.g. 8 Weeks (80 Hrs)"
+                class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Promotional Badge (Optional)</label>
+              <input
+                v-model="courseForm.badge"
+                placeholder="e.g. Bestseller, High Demand, Popular"
+                class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-slate-300 font-semibold mb-1">Course Overview & Learning Outcomes</label>
+              <textarea
+                v-model="courseForm.description"
+                rows="3"
+                placeholder="Detailed curriculum overview, practical projects, tools mastered, and prerequisites..."
+                class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Who Can Edit This Course Section -->
+          <div class="rounded-2xl border border-indigo-900/60 bg-indigo-950/30 p-4 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🔐</span>
+              <div>
+                <h4 class="font-bold text-white text-xs">Course Editor Authorization</h4>
+                <p class="text-[11px] text-slate-400">Specify which instructor/tutor has permissions to edit and update this course</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1 text-[11px]">Authorized Editor Email *</label>
+                <input
+                  v-model="courseForm.editor_email"
+                  required
+                  type="email"
+                  placeholder="e.g. instructor@palantir.academy"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1 text-[11px]">Editor Display Name</label>
+                <input
+                  v-model="courseForm.editor_name"
+                  placeholder="e.g. Lead Web Architect"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+            <p class="text-[10px] text-indigo-300/80">
+              ℹ️ Chief Super Admin (extractionevolution@gmail.com) retains master ownership of all courses. The specified user will also be granted edit and update clearance for this specific track.
+            </p>
+          </div>
+
+          <!-- Buttons -->
+          <div class="pt-2 flex items-center justify-end gap-3 border-t border-slate-800">
+            <button
+              type="button"
+              @click="isCourseModalOpen = false"
+              class="rounded-xl border border-slate-800 px-4 py-2 text-slate-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="isCoursesSaving"
+              class="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 px-5 py-2 font-bold text-white shadow-md shadow-indigo-600/30 transition-all flex items-center gap-1.5"
+            >
+              <span v-if="isCoursesSaving" class="animate-spin">⏳</span>
+              <span>{{ courseModalMode === 'create' ? 'Publish Course' : 'Save Course Changes' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteSettings } from '~/composables/useSiteSettings'
+import { useCourses } from '~/composables/useCourses'
 
 defineEmits(['open-enroll'])
 
 const { user, isProfileModalOpen, loginAsDemoStudent, loginAsSuperAdmin } = useAuth()
 const { settings: globalSettings, updateSettings, resetToDefault, isSaving: isSavingBranding } = useSiteSettings()
+const {
+  courses,
+  isLoaded: isCoursesLoaded,
+  isSaving: isCoursesSaving,
+  initCourses,
+  canUserEditCourse,
+  createCourse,
+  updateCourse,
+  deleteCourse
+} = useCourses()
 
 // Responsive Mobile Sidebar Toggle
 const isMobileSidebarOpen = ref(false)
@@ -1408,6 +1749,7 @@ const leadSearch = ref('')
 // Sidebar navigation items
 const superAdminNavItems = computed(() => [
   { id: 'User Directory & Staff Hierarchy', title: 'User Directory', icon: '👥', badge: `${managedUsers.value.length}` },
+  { id: 'Courses & Curriculum', title: 'Courses & Pricing', icon: '🎓', badge: `${courses.value.length}` },
   { id: '+ Create User / Invite Staff', title: 'Provision Staff', icon: '➕', badge: 'New' },
   { id: 'Student Talent & Hiring Desk', title: 'Talent & Hiring', icon: '💼', badge: 'Direct' },
   { id: 'Inbound Leads (CRM)', title: 'Inbound Leads CRM', icon: '🤖', badge: `${leads.value.length}` },
@@ -1419,6 +1761,7 @@ const superAdminNavItems = computed(() => [
 const currentTabMetadata = computed(() => {
   const meta = {
     'User Directory & Staff Hierarchy': { icon: '👥', title: 'User Directory & Power Matrix', desc: 'Oversee registered accounts, filter students and faculty, assign powers, and promote talent' },
+    'Courses & Curriculum': { icon: '🎓', title: 'Courses & Pricing Management (30 Industrial Tracks)', desc: 'Create, update pricing, assign authorized editors, and manage full course catalogue live' },
     '+ Create User / Invite Staff': { icon: '➕', title: 'Provision Staff Member / Partner', desc: 'Create new instructor, developer, or employer accounts with custom clearance' },
     'Student Talent & Hiring Desk': { icon: '💼', title: 'Direct Hiring & Conversion Desk', desc: 'Offer paid junior developer roles to high-performing interns' },
     'Inbound Leads (CRM)': { icon: '🤖', title: 'Inbound Student Leads & Counseling Desk', desc: 'Captured live via AI counselor widget and website applications' },
@@ -1532,65 +1875,134 @@ const resetBrandingDefaults = async () => {
   }
 }
 
-// Super Admin Managed Users
+// Super Admin Managed Users (Zero dummy users - dynamically loaded from database)
 const managedUsers = ref([
   {
-    id: 'u1',
+    id: 'master-owner',
     full_name: 'Chief Super Admin (Palantir)',
     email: 'extractionevolution@gmail.com',
     role: 'super_admin',
     status: 'active',
     hired_status: 'not_hired',
     permissions: { can_grade: true, can_issue_cert: true, can_view_leads: true, can_hire: true, can_manage_users: true }
-  },
-  {
-    id: 'u2',
-    full_name: 'Aarav Mehta',
-    email: 'aarav.mehta@dtu.ac.in',
-    college_name: 'DTU (8th Sem)',
-    role: 'developer',
-    status: 'active',
-    hired_status: 'hired_internal_developer',
-    salary_or_stipend: '₹45,000/month',
-    permissions: { can_grade: true, can_issue_cert: false, can_view_leads: false, can_hire: false }
-  },
-  {
-    id: 'u3',
-    full_name: 'Alex Mercer',
-    email: 'alex.mercer@palantir.academy',
-    role: 'tutor',
-    status: 'active',
-    assigned_batch: 'PTA-2026-FS-01',
-    permissions: { can_grade: true, can_issue_cert: false, can_view_leads: false, can_hire: false }
-  },
-  {
-    id: 'u4',
-    full_name: 'Dr. Sophia Vance',
-    email: 'sophia.vance@palantir.academy',
-    role: 'tutor',
-    status: 'active',
-    assigned_batch: 'PTA-2026-AI-01',
-    permissions: { can_grade: true, can_issue_cert: false, can_view_leads: false, can_hire: false }
-  },
-  {
-    id: 'u5',
-    full_name: 'ApexCloud Hiring Partner',
-    email: 'recruiting@apexcloud.io',
-    role: 'employer',
-    status: 'active',
-    permissions: { can_grade: false, can_issue_cert: false, can_view_leads: false, can_hire: true }
-  },
-  {
-    id: 'u6',
-    full_name: 'Sneha Patel',
-    email: 'sneha.patel@vit.ac.in',
-    college_name: 'VIT Vellore (7th Sem)',
-    role: 'student',
-    status: 'active',
-    hired_status: 'not_hired',
-    permissions: { can_grade: false, can_issue_cert: false, can_view_leads: false, can_hire: false }
   }
 ])
+
+const loadManagedUsers = async () => {
+  try {
+    const res = await $fetch('/api/admin/users')
+    if (res?.success && res.data && res.data.length > 0) {
+      managedUsers.value = res.data
+    }
+  } catch (e) {
+    console.warn('Using fallback user list:', e)
+  }
+}
+
+// Course Management State & Computed
+const courseSearch = ref('')
+const courseCategoryFilter = ref('all')
+const coursePriceSort = ref('default')
+const isCourseModalOpen = ref(false)
+const courseModalMode = ref('create')
+const courseForm = ref({
+  id: '',
+  title: '',
+  slug: '',
+  category: 'Web Development',
+  price: 4999,
+  original_price: 9999,
+  duration: '8 Weeks (80 Hrs)',
+  level: 'Beginner to Advanced',
+  description: '',
+  editor_email: 'extractionevolution@gmail.com',
+  editor_name: 'Chief Super Admin',
+  status: 'Published',
+  badge: ''
+})
+
+const uniqueCourseCategories = computed(() => {
+  const cats = new Set(courses.value.map(c => c.category))
+  return Array.from(cats).sort()
+})
+
+const filteredCourses = computed(() => {
+  return courses.value
+    .filter(c => {
+      const matchesCat = courseCategoryFilter.value === 'all' || c.category === courseCategoryFilter.value
+      const q = courseSearch.value.toLowerCase().trim()
+      const matchesSearch = !q ||
+        c.title.toLowerCase().includes(q) ||
+        c.slug.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        (c.editor_email && c.editor_email.toLowerCase().includes(q)) ||
+        (c.editor_name && c.editor_name.toLowerCase().includes(q)) ||
+        (c.tags && c.tags.some(t => t.toLowerCase().includes(q)))
+      return matchesCat && matchesSearch
+    })
+    .sort((a, b) => {
+      if (coursePriceSort.value === 'low-high') return a.price - b.price
+      if (coursePriceSort.value === 'high-low') return b.price - a.price
+      return 0
+    })
+})
+
+const openCourseModal = (course) => {
+  if (course) {
+    courseModalMode.value = 'edit'
+    courseForm.value = { ...course }
+  } else {
+    courseModalMode.value = 'create'
+    courseForm.value = {
+      id: '',
+      title: '',
+      slug: '',
+      category: 'Web Development',
+      price: 4999,
+      original_price: 9999,
+      duration: '8 Weeks (80 Hrs)',
+      level: 'Beginner to Advanced',
+      description: '',
+      editor_email: user.value?.email || 'extractionevolution@gmail.com',
+      editor_name: user.value?.user_metadata?.full_name || 'Chief Super Admin',
+      status: 'Published',
+      badge: ''
+    }
+  }
+  isCourseModalOpen.value = true
+}
+
+const saveCourse = async () => {
+  if (!courseForm.value.title) {
+    alert('Please enter a course title.')
+    return
+  }
+
+  if (!courseForm.value.slug) {
+    courseForm.value.slug = courseForm.value.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  }
+
+  if (courseModalMode.value === 'create') {
+    await createCourse(courseForm.value, user.value?.email || 'extractionevolution@gmail.com')
+    alert(`Course "${courseForm.value.title}" successfully created!`)
+  } else {
+    await updateCourse(courseForm.value.id, courseForm.value)
+    alert(`Course "${courseForm.value.title}" successfully updated!`)
+  }
+  isCourseModalOpen.value = false
+}
+
+const handleDeleteCourse = async (course) => {
+  if (confirm(`Are you sure you want to delete "${course.title}"? This cannot be undone.`)) {
+    await deleteCourse(course.id)
+    alert(`Course "${course.title}" has been deleted.`)
+  }
+}
+
+onMounted(() => {
+  initCourses()
+  loadManagedUsers()
+})
 
 const isMasterSuperAdmin = (u) => {
   return u.role === 'super_admin' || u.email === 'extractionevolution@gmail.com' || (user.value && u.email === user.value.email && userRole.value === 'super_admin')
@@ -1797,7 +2209,7 @@ const demoBatches = [
   {
     code: 'PTA-2026-FS-01',
     track: 'Full-Stack Web Engineering (Nuxt 3 & Node)',
-    tutor: 'Alex Mercer (Lead Architect)',
+    tutor: 'Lead Web Architect (Faculty)',
     timing: '6:30 PM - 8:30 PM IST',
     enrolled: 32,
     capacity: 35,
@@ -1806,7 +2218,7 @@ const demoBatches = [
   {
     code: 'PTA-2026-AI-01',
     track: 'Applied AI & Generative AI Systems',
-    tutor: 'Dr. Sophia Vance (AI Scientist)',
+    tutor: 'Lead AI Scientist (Faculty)',
     timing: '7:00 PM - 9:00 PM IST',
     enrolled: 28,
     capacity: 30,
@@ -1815,23 +2227,33 @@ const demoBatches = [
 ]
 
 const newCert = ref({
-  student_name: 'Aarav Mehta',
-  college_name: 'Delhi Technological University (DTU)',
+  student_name: '',
+  college_name: '',
   duration: '6 Months (320 Industrial Hours)',
   grade: 'Distinction (Grade A+)',
-  capstone_project: 'Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase'
+  capstone_project: 'Full-Stack Enterprise Engineering'
 })
 
 const generateCertificate = () => {
+  if (!newCert.value.student_name) {
+    alert('Please enter a student name to issue the certificate.')
+    return
+  }
   alert(`Certificate generated and registered for ${newCert.value.student_name}!`)
 }
 
-const demoStudents = ref([
-  { name: 'Aarav Mehta', college: 'DTU (8th Sem)', attendance: 96, present: true },
-  { name: 'Sneha Patel', college: 'VIT Vellore (7th Sem)', attendance: 92, present: true },
-  { name: 'Karthik Rao', college: 'BITS Pilani (8th Sem)', attendance: 88, present: true },
-  { name: 'Simran Kaur', college: 'Thapar University (8th Sem)', attendance: 84, present: false }
-])
+const demoStudents = computed(() => {
+  const students = managedUsers.value.filter(u => u.role === 'student')
+  if (students.length > 0) {
+    return students.map(s => ({
+      name: s.full_name,
+      college: s.college_name || 'Engineering Student',
+      attendance: 98,
+      present: true
+    }))
+  }
+  return []
+})
 
 const studentRoadmap = [
   { weeks: '1-4', title: 'ESNext & TS Architecture', desc: 'Interfaces, async queues, design patterns', done: true },

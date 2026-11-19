@@ -93,6 +93,28 @@ CREATE TABLE IF NOT EXISTS public.site_settings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 7. COURSES & INDUSTRIAL TRAINING CURRICULUM TABLE (30+ COURSES)
+CREATE TABLE IF NOT EXISTS public.courses (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    category TEXT NOT NULL,
+    price NUMERIC NOT NULL,
+    original_price NUMERIC,
+    duration TEXT NOT NULL,
+    level TEXT DEFAULT 'Beginner to Advanced',
+    description TEXT NOT NULL,
+    editor_email TEXT DEFAULT 'extractionevolution@gmail.com',
+    editor_name TEXT DEFAULT 'Chief Super Admin',
+    enrolled_count INT DEFAULT 0,
+    rating NUMERIC DEFAULT 4.9,
+    status TEXT DEFAULT 'Published' CHECK (status IN ('Published', 'Draft', 'Archived')),
+    badge TEXT,
+    tags TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- Default Site Branding Seed
 INSERT INTO public.site_settings (key, value)
 VALUES ('branding', '{"siteName": "Palantir Tech Academy", "siteSubtitle": "Industrial Internship & Training", "logoType": "icon", "logoUrl": "", "logoLetter": "P", "logoColor": "indigo"}'::jsonb)
@@ -102,29 +124,12 @@ ON CONFLICT (key) DO NOTHING;
 -- SEED MASTER DATA
 -- =========================================================
 
--- Super Admin Master Account
+-- Super Admin Master Account (Real Authenticated Owner)
 INSERT INTO public.user_profiles (email, full_name, role, status, permissions)
 VALUES 
 ('extractionevolution@gmail.com', 'Chief Super Admin (Palantir)', 'super_admin', 'active', '{"can_grade": true, "can_issue_cert": true, "can_view_leads": true, "can_hire": true, "can_manage_users": true}'::jsonb)
 ON CONFLICT (email) DO UPDATE 
 SET role = 'super_admin', permissions = '{"can_grade": true, "can_issue_cert": true, "can_view_leads": true, "can_hire": true, "can_manage_users": true}'::jsonb;
-
--- Demo Staff & Interns
-INSERT INTO public.user_profiles (email, full_name, role, status, assigned_batch, permissions)
-VALUES 
-('alex.mercer@palantir.academy', 'Alex Mercer', 'tutor', 'active', 'PTA-2026-FS-01', '{"can_grade": true, "can_issue_cert": false, "can_view_leads": false, "can_hire": false, "can_manage_users": false}'::jsonb),
-('sophia.vance@palantir.academy', 'Dr. Sophia Vance', 'tutor', 'active', 'PTA-2026-AI-01', '{"can_grade": true, "can_issue_cert": false, "can_view_leads": false, "can_hire": false, "can_manage_users": false}'::jsonb)
-ON CONFLICT (email) DO NOTHING;
-
-INSERT INTO public.user_profiles (email, full_name, role, status, college_name, hired_status, salary_or_stipend, permissions)
-VALUES 
-('aarav.mehta@dtu.ac.in', 'Aarav Mehta', 'developer', 'active', 'DTU (8th Sem)', 'hired_internal_developer', '₹45,000/month', '{"can_grade": true, "can_issue_cert": false, "can_view_leads": false, "can_hire": false, "can_manage_users": false}'::jsonb)
-ON CONFLICT (email) DO NOTHING;
-
-INSERT INTO public.user_profiles (email, full_name, role, status, permissions)
-VALUES 
-('recruiting@apexcloud.io', 'ApexCloud Hiring Partner', 'employer', 'active', '{"can_grade": false, "can_issue_cert": false, "can_view_leads": false, "can_hire": true, "can_manage_users": false}'::jsonb)
-ON CONFLICT (email) DO NOTHING;
 
 -- Sample Batches
 INSERT INTO public.batches (batch_code, track_name, duration, start_date, end_date, tutor_name, timing, max_capacity, status)
@@ -146,8 +151,15 @@ ALTER TABLE public.batches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
 
 -- SAFE IDEMPOTENT POLICIES (Drop if exists first to avoid error 42710)
+DROP POLICY IF EXISTS "Public Read Courses" ON public.courses;
+CREATE POLICY "Public Read Courses" ON public.courses FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Manage Courses" ON public.courses;
+CREATE POLICY "Public Manage Courses" ON public.courses FOR ALL USING (true);
+
 DROP POLICY IF EXISTS "Public Read Site Settings" ON public.site_settings;
 CREATE POLICY "Public Read Site Settings" ON public.site_settings FOR SELECT USING (true);
 
