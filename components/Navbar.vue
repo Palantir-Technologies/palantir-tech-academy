@@ -50,8 +50,8 @@
           <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           Verify Cert
         </NuxtLink>
-        <NuxtLink to="/portal" class="text-indigo-300 hover:text-white transition-colors bg-indigo-950/60 border border-indigo-800/50 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5">
-          <span>⚡ Dashboard</span>
+        <NuxtLink to="/portal" class="hover:text-indigo-400 transition-colors">
+          Dashboard
         </NuxtLink>
       </nav>
 
@@ -76,14 +76,6 @@
             </div>
             <span class="text-slate-400 text-[10px] hidden sm:inline">⚙️</span>
           </button>
-
-          <!-- Dashboard Link (Desktop) -->
-          <NuxtLink
-            to="/portal"
-            class="hidden md:inline-flex rounded-xl bg-slate-900 border border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            Workspace
-          </NuxtLink>
 
           <!-- Sign Out Button -->
           <button
@@ -166,7 +158,7 @@
           @click="isMobileNavOpen = false"
           class="block rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 p-3 text-center text-xs font-bold text-white shadow-md shadow-indigo-600/30"
         >
-          ⚡ Open Dashboard Workspace →
+          Open Dashboard →
         </NuxtLink>
       </div>
     </Transition>

@@ -34,42 +34,20 @@
           </div>
         </div>
 
-        <!-- Right: Role Clearance & View Switchers -->
+        <!-- Right: Role Clearance Badge -->
         <div class="flex items-center gap-2">
-          <!-- Super Admin Mode Toggle -->
-          <div v-if="userRole === 'super_admin'" class="flex items-center gap-2">
-            <button
-              @click="superAdminPreviewMode = !superAdminPreviewMode"
-              :class="[
-                'rounded-xl px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
-                superAdminPreviewMode
-                  ? 'bg-amber-950 text-amber-300 border-amber-700/80'
-                  : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white'
-              ]"
-            >
-              <span>{{ superAdminPreviewMode ? '👑 Master Hub' : '👁️ Preview Student View' }}</span>
-            </button>
-            <span class="hidden sm:inline-flex rounded-lg bg-amber-950/80 border border-amber-800/60 px-2.5 py-1 text-[11px] text-amber-300 font-mono font-bold">
-              👑 Master Owner
-            </span>
-          </div>
-
-          <!-- Non-Super-Admin Quick Evaluator Switcher -->
-          <div v-else class="flex items-center gap-2">
-            <button
-              @click="loginAsSuperAdmin"
-              class="rounded-xl border border-amber-500/50 bg-amber-950/50 hover:bg-amber-900/60 px-3 py-1.5 text-xs font-bold text-amber-300 transition-colors flex items-center gap-1"
-            >
-              <span>👑 Super Admin Login</span>
-            </button>
-            <button
-              v-if="!user"
-              @click="loginAsDemoStudent"
-              class="rounded-xl border border-indigo-500/40 bg-indigo-950/50 hover:bg-indigo-900/60 px-3 py-1.5 text-xs font-bold text-indigo-300 transition-colors"
-            >
-              🎓 Student
-            </button>
-          </div>
+          <span
+            v-if="userRole === 'super_admin'"
+            class="rounded-lg bg-amber-950/80 border border-amber-800/60 px-2.5 py-1 text-[11px] text-amber-300 font-mono font-bold"
+          >
+            👑 Master Owner
+          </span>
+          <span
+            v-else-if="user"
+            class="rounded-lg bg-slate-900 border border-slate-800 px-2.5 py-1 text-[11px] text-slate-300 font-mono"
+          >
+            {{ userRole === 'developer' ? '💻 Developer' : userRole === 'tutor' ? '👨‍🏫 Faculty' : '🎓 Student' }}
+          </span>
         </div>
       </div>
     </div>
@@ -107,6 +85,17 @@
               class="lg:hidden text-slate-400 hover:text-white p-1 text-sm"
             >
               ✕
+            </button>
+          </div>
+
+          <!-- Super Admin View Switcher (Inside Sidebar, keeps header clean) -->
+          <div v-if="userRole === 'super_admin'">
+            <button
+              @click="superAdminPreviewMode = !superAdminPreviewMode"
+              class="w-full text-center py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5"
+              :class="superAdminPreviewMode ? 'bg-amber-950/80 text-amber-300 border-amber-700/80 shadow-md shadow-amber-950/30' : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:bg-slate-800'"
+            >
+              <span>{{ superAdminPreviewMode ? '👑 Return to Master Console' : '👁️ Preview Student View' }}</span>
             </button>
           </div>
 
