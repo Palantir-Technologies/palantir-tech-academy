@@ -180,7 +180,7 @@
         <!-- Super Admin Sub Tabs -->
         <div class="flex items-center gap-2 sm:gap-3 border-b border-slate-800 pb-3 overflow-x-auto">
           <button
-            v-for="tab in ['User Directory & Staff Hierarchy', '+ Create User / Invite Staff', 'Student Talent & Hiring Desk', 'Inbound Leads (CRM)', 'Batches & Cohorts', 'Credential Issuer']"
+            v-for="tab in ['User Directory & Staff Hierarchy', '+ Create User / Invite Staff', 'Student Talent & Hiring Desk', 'Inbound Leads (CRM)', 'Batches & Cohorts', 'Credential Issuer', '⚙️ Site Branding & Logo']"
             :key="tab"
             @click="superAdminTab = tab"
             :class="[
@@ -690,6 +690,235 @@
             </div>
           </form>
         </div>
+
+        <!-- SUBTAB 7: Dynamic Site Branding & Logo Management -->
+        <div v-else-if="superAdminTab === '⚙️ Site Branding & Logo'" class="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800/80 space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <span>⚙️ Dynamic Website Branding & Logo Engine</span>
+                <span class="rounded bg-indigo-950 text-indigo-400 border border-indigo-800/60 px-2 py-0.2 text-[10px] font-bold">
+                  Real-Time Propagation
+                </span>
+              </h3>
+              <p class="text-xs text-slate-400">
+                Update the official website name, subtitle, and logo live across the navbar, footer, metadata, and mobile PWA application.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="resetBrandingDefaults"
+                class="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+              >
+                ↺ Reset Default
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Real-Time Header Preview Box -->
+          <div class="rounded-2xl border border-indigo-500/30 bg-slate-950/70 p-4 sm:p-5 space-y-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Live Header Preview</span>
+            <div class="rounded-xl border border-slate-800 bg-slate-900/90 p-3 sm:p-4 flex items-center justify-between">
+              <!-- Brand Representation -->
+              <div class="flex items-center gap-3">
+                <!-- If Image -->
+                <div v-if="brandingForm.logoType === 'image' && brandingForm.logoUrl" class="h-10 w-10 flex-shrink-0">
+                  <img
+                    :src="brandingForm.logoUrl"
+                    :alt="brandingForm.siteName"
+                    class="h-10 w-10 rounded-xl object-contain border border-slate-800 bg-slate-950 p-1"
+                  />
+                </div>
+                <!-- If Monogram -->
+                <div
+                  v-else
+                  :class="[
+                    'flex h-10 w-10 items-center justify-center rounded-xl p-0.5 shadow-md flex-shrink-0',
+                    getLogoGradient(brandingForm.logoColor)
+                  ]"
+                >
+                  <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-slate-950 font-extrabold text-transparent bg-clip-text text-lg" :class="getTextGradient(brandingForm.logoColor)">
+                    {{ brandingForm.logoLetter || 'P' }}
+                  </div>
+                </div>
+
+                <div>
+                  <span class="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+                    <span>{{ previewFormattedName.first }}</span>
+                    <span class="text-indigo-400 font-medium">{{ previewFormattedName.rest }}</span>
+                  </span>
+                  <span class="block text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                    {{ brandingForm.siteSubtitle || 'Industrial Internship & Training' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Fake nav mock -->
+              <div class="hidden sm:flex items-center gap-3 text-xs text-slate-400">
+                <span class="hover:text-white">Programs</span>
+                <span class="hover:text-white">Curriculum</span>
+                <span class="text-emerald-400 font-semibold">✨ AI Synopsis</span>
+                <span class="rounded-lg bg-indigo-600 text-white px-2.5 py-1 text-[11px] font-bold">Apply Now</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notification Banner -->
+          <div v-if="brandingMessage" :class="['p-3 rounded-xl text-xs font-semibold flex items-center gap-2', brandingIsError ? 'bg-red-950/80 border border-red-800 text-red-300' : 'bg-emerald-950/80 border border-emerald-800 text-emerald-300']">
+            <span>{{ brandingIsError ? '⚠️' : '✅' }}</span>
+            <span>{{ brandingMessage }}</span>
+          </div>
+
+          <!-- Branding Configuration Form -->
+          <form @submit.prevent="saveBranding" class="space-y-5 text-xs max-w-3xl">
+            <!-- Site Name & Subtitle -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Website / Academy Name *</label>
+                <input
+                  v-model="brandingForm.siteName"
+                  required
+                  placeholder="e.g. Palantir Tech Academy"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Tagline / Subtitle *</label>
+                <input
+                  v-model="brandingForm.siteSubtitle"
+                  required
+                  placeholder="e.g. Industrial Internship & Training"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- Logo Type Selector -->
+            <div>
+              <label class="block text-slate-300 font-semibold mb-2">Logo Representation Mode *</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label
+                  :class="[
+                    'flex items-center gap-3 rounded-2xl border p-3.5 cursor-pointer transition-all',
+                    brandingForm.logoType === 'icon' ? 'border-indigo-500 bg-indigo-950/30' : 'border-slate-800 bg-slate-900/60'
+                  ]"
+                >
+                  <input type="radio" value="icon" v-model="brandingForm.logoType" class="text-indigo-600" />
+                  <div>
+                    <span class="font-bold text-white block">Stylized Monogram / Letter Emblem</span>
+                    <span class="text-slate-400 text-[11px]">Dynamic gradient badge with custom letter or initials</span>
+                  </div>
+                </label>
+
+                <label
+                  :class="[
+                    'flex items-center gap-3 rounded-2xl border p-3.5 cursor-pointer transition-all',
+                    brandingForm.logoType === 'image' ? 'border-indigo-500 bg-indigo-950/30' : 'border-slate-800 bg-slate-900/60'
+                  ]"
+                >
+                  <input type="radio" value="image" v-model="brandingForm.logoType" class="text-indigo-600" />
+                  <div>
+                    <span class="font-bold text-white block">Custom Logo Image (URL or Upload)</span>
+                    <span class="text-slate-400 text-[11px]">Upload a company PNG/SVG/WebP or paste an image URL</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Monogram Settings (If Logo Type === 'icon') -->
+            <div v-if="brandingForm.logoType === 'icon'" class="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Monogram Letter / Symbol (1-3 Chars)</label>
+                <input
+                  v-model="brandingForm.logoLetter"
+                  maxlength="3"
+                  placeholder="e.g. P or PTA"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white uppercase font-bold tracking-widest focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Accent Gradient Palette</label>
+                <select
+                  v-model="brandingForm.logoColor"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                >
+                  <option value="indigo">Indigo / Cyber Sky (Default)</option>
+                  <option value="emerald">Emerald / Tech Mint</option>
+                  <option value="sky">Electric Sky Blue</option>
+                  <option value="amber">Amber / Gold</option>
+                  <option value="rose">Rose / Cyber Pink</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Image Logo Settings (If Logo Type === 'image') -->
+            <div v-else class="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Logo Image Direct URL</label>
+                <input
+                  v-model="brandingForm.logoUrl"
+                  placeholder="https://example.com/logo.png"
+                  class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <!-- Quick File Upload (Base64) -->
+              <div>
+                <label class="block text-slate-300 font-semibold mb-1">Or Upload Image File From Your Device</label>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                  @change="handleLogoFileUpload"
+                  class="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer"
+                />
+                <span class="text-[10px] text-slate-500 block mt-1">Recommended: Square PNG/SVG with transparent background</span>
+              </div>
+
+              <!-- Quick Presets -->
+              <div>
+                <span class="text-[11px] font-semibold text-slate-400 block mb-2">Or Choose a High-Tech Preset Emblem:</span>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    @click="brandingForm.logoUrl = 'https://api.iconify.design/heroicons:cpu-chip-solid.svg?color=%23818cf8'"
+                    class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-indigo-300 hover:border-indigo-500"
+                  >
+                    ⚡ Neural Chip
+                  </button>
+                  <button
+                    type="button"
+                    @click="brandingForm.logoUrl = 'https://api.iconify.design/heroicons:cube-transparent-solid.svg?color=%2338bdf8'"
+                    class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-sky-300 hover:border-sky-500"
+                  >
+                    🔷 Hexagon Matrix
+                  </button>
+                  <button
+                    type="button"
+                    @click="brandingForm.logoUrl = 'https://api.iconify.design/heroicons:code-bracket-square-solid.svg?color=%2334d399'"
+                    class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-emerald-300 hover:border-emerald-500"
+                  >
+                    💻 Code Terminal
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-2 flex items-center gap-3">
+              <button
+                type="submit"
+                :disabled="isSavingBranding"
+                class="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 px-6 py-2.5 font-bold text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 disabled:opacity-50"
+              >
+                {{ isSavingBranding ? 'Publishing Live...' : '💾 Save & Publish Branding Live' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <!-- ============================================================ -->
@@ -1074,12 +1303,112 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useSiteSettings } from '~/composables/useSiteSettings'
 
 defineEmits(['open-enroll'])
 
 const { user, isProfileModalOpen, loginAsDemoStudent, loginAsSuperAdmin } = useAuth()
+const { settings: globalSettings, updateSettings, resetToDefault, isSaving: isSavingBranding } = useSiteSettings()
+
+// Dynamic Branding State in Super Admin Hub
+const brandingForm = ref({
+  siteName: globalSettings.value.siteName || 'Palantir Tech Academy',
+  siteSubtitle: globalSettings.value.siteSubtitle || 'Industrial Internship & Training',
+  logoType: globalSettings.value.logoType || 'icon',
+  logoUrl: globalSettings.value.logoUrl || '',
+  logoLetter: globalSettings.value.logoLetter || 'P',
+  logoColor: globalSettings.value.logoColor || 'indigo'
+})
+
+const brandingMessage = ref('')
+const brandingIsError = ref(false)
+
+watch(
+  () => globalSettings.value,
+  (val) => {
+    if (val) {
+      brandingForm.value = {
+        siteName: val.siteName || 'Palantir Tech Academy',
+        siteSubtitle: val.siteSubtitle || 'Industrial Internship & Training',
+        logoType: val.logoType || 'icon',
+        logoUrl: val.logoUrl || '',
+        logoLetter: val.logoLetter || 'P',
+        logoColor: val.logoColor || 'indigo'
+      }
+    }
+  },
+  { immediate: true }
+)
+
+const previewFormattedName = computed(() => {
+  const name = brandingForm.value.siteName || 'Palantir Tech Academy'
+  const parts = name.trim().split(' ')
+  return {
+    first: parts[0] || 'Palantir',
+    rest: parts.slice(1).join(' ') || 'Academy'
+  }
+})
+
+const getLogoGradient = (color) => {
+  const map = {
+    indigo: 'bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400',
+    emerald: 'bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400',
+    sky: 'bg-gradient-to-tr from-sky-600 via-sky-500 to-cyan-400',
+    amber: 'bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400',
+    rose: 'bg-gradient-to-tr from-rose-600 via-rose-500 to-pink-400'
+  }
+  return map[color] || map.indigo
+}
+
+const getTextGradient = (color) => {
+  const map = {
+    indigo: 'bg-gradient-to-r from-indigo-400 to-sky-300',
+    emerald: 'bg-gradient-to-r from-emerald-400 to-teal-300',
+    sky: 'bg-gradient-to-r from-sky-400 to-cyan-300',
+    amber: 'bg-gradient-to-r from-amber-400 to-yellow-300',
+    rose: 'bg-gradient-to-r from-rose-400 to-pink-300'
+  }
+  return map[color] || map.indigo
+}
+
+const handleLogoFileUpload = (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (file.size > 2 * 1024 * 1024) {
+    alert('Image file is too large. Please select an image under 2MB.')
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = (event) => {
+    brandingForm.value.logoUrl = event.target?.result
+    brandingForm.value.logoType = 'image'
+  }
+  reader.readAsDataURL(file)
+}
+
+const saveBranding = async () => {
+  brandingMessage.value = ''
+  brandingIsError.value = false
+  const res = await updateSettings(brandingForm.value)
+  if (res.success) {
+    brandingMessage.value = 'Success: Website name and logo updated live across entire platform!'
+    setTimeout(() => { brandingMessage.value = '' }, 5000)
+  } else {
+    brandingIsError.value = true
+    brandingMessage.value = res.error || 'Failed to update branding.'
+  }
+}
+
+const resetBrandingDefaults = async () => {
+  if (confirm('Reset website name and logo to default Palantir Tech Academy?')) {
+    await resetToDefault()
+    brandingForm.value = { ...globalSettings.value }
+    brandingMessage.value = 'Branding reset to default!'
+    setTimeout(() => { brandingMessage.value = '' }, 4000)
+  }
+}
 
 // Role Detection
 const userRole = computed(() => {

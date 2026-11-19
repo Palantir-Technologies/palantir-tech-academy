@@ -1,19 +1,39 @@
 <template>
   <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-      <!-- Logo -->
+      <!-- Dynamic Brand Logo & Name -->
       <NuxtLink to="/" class="flex items-center gap-3 group">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 p-0.5 shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+        <!-- Image Logo Mode -->
+        <div v-if="settings.logoType === 'image' && settings.logoUrl" class="h-10 w-10 flex-shrink-0">
+          <img
+            :src="settings.logoUrl"
+            :alt="settings.siteName"
+            class="h-10 w-10 rounded-xl object-contain border border-slate-800 bg-slate-900 p-1 shadow-md shadow-indigo-500/10 group-hover:scale-105 transition-transform"
+          />
+        </div>
+
+        <!-- Stylized Icon Logo Mode -->
+        <div
+          v-else
+          :class="[
+            'flex h-10 w-10 items-center justify-center rounded-xl p-0.5 shadow-lg group-hover:scale-105 transition-transform flex-shrink-0',
+            logoGradient
+          ]"
+        >
           <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-slate-950">
-            <span class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-sky-300 text-lg">P</span>
+            <span :class="['font-extrabold text-transparent bg-clip-text text-lg', logoTextGradient]">
+              {{ settings.logoLetter || 'P' }}
+            </span>
           </div>
         </div>
+
         <div>
           <span class="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
-            Palantir <span class="text-indigo-400 font-medium">Tech Academy</span>
+            <span>{{ formattedName.first }}</span>
+            <span class="text-indigo-400 font-medium">{{ formattedName.rest }}</span>
           </span>
-          <span class="block text-[10px] font-medium uppercase tracking-wider text-slate-400">
-            Industrial Internship & Training
+          <span class="block text-[10px] font-medium uppercase tracking-wider text-slate-400 truncate max-w-[180px] sm:max-w-none">
+            {{ settings.siteSubtitle || 'Industrial Internship & Training' }}
           </span>
         </div>
       </NuxtLink>
@@ -96,14 +116,50 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useSiteSettings } from '~/composables/useSiteSettings'
 
 defineEmits(['open-enroll', 'open-auth'])
 
 const { user, isProfileModalOpen, initAuth, signOut } = useAuth()
+const { settings, initSettings } = useSiteSettings()
 
 onMounted(() => {
   initAuth()
+  initSettings()
+})
+
+const formattedName = computed(() => {
+  const name = settings.value.siteName || 'Palantir Tech Academy'
+  const parts = name.trim().split(' ')
+  return {
+    first: parts[0] || 'Palantir',
+    rest: parts.slice(1).join(' ') || 'Academy'
+  }
+})
+
+const logoGradient = computed(() => {
+  const color = settings.value.logoColor || 'indigo'
+  const map = {
+    indigo: 'bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 shadow-indigo-500/20',
+    emerald: 'bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 shadow-emerald-500/20',
+    sky: 'bg-gradient-to-tr from-sky-600 via-sky-500 to-cyan-400 shadow-sky-500/20',
+    amber: 'bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-400 shadow-amber-500/20',
+    rose: 'bg-gradient-to-tr from-rose-600 via-rose-500 to-pink-400 shadow-rose-500/20'
+  }
+  return map[color] || map.indigo
+})
+
+const logoTextGradient = computed(() => {
+  const color = settings.value.logoColor || 'indigo'
+  const map = {
+    indigo: 'bg-gradient-to-r from-indigo-400 to-sky-300',
+    emerald: 'bg-gradient-to-r from-emerald-400 to-teal-300',
+    sky: 'bg-gradient-to-r from-sky-400 to-cyan-300',
+    amber: 'bg-gradient-to-r from-amber-400 to-yellow-300',
+    rose: 'bg-gradient-to-r from-rose-400 to-pink-300'
+  }
+  return map[color] || map.indigo
 })
 </script>

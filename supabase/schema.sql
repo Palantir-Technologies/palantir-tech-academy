@@ -86,6 +86,18 @@ CREATE TABLE IF NOT EXISTS public.certificates (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 6. SITE SETTINGS & DYNAMIC BRANDING TABLE
+CREATE TABLE IF NOT EXISTS public.site_settings (
+    key TEXT PRIMARY KEY,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Default Site Branding Seed
+INSERT INTO public.site_settings (key, value)
+VALUES ('branding', '{"siteName": "Palantir Tech Academy", "siteSubtitle": "Industrial Internship & Training", "logoType": "icon", "logoUrl": "", "logoLetter": "P", "logoColor": "indigo"}'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
 -- =========================================================
 -- SEED MASTER DATA
 -- =========================================================
@@ -133,6 +145,14 @@ ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.batches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+
+-- SAFE IDEMPOTENT POLICIES (Drop if exists first to avoid error 42710)
+DROP POLICY IF EXISTS "Public Read Site Settings" ON public.site_settings;
+CREATE POLICY "Public Read Site Settings" ON public.site_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Upsert Site Settings" ON public.site_settings;
+CREATE POLICY "Public Upsert Site Settings" ON public.site_settings FOR ALL USING (true);
 
 -- SAFE IDEMPOTENT POLICIES (Drop if exists first to avoid error 42710)
 DROP POLICY IF EXISTS "Public Read Certificates" ON public.certificates;
