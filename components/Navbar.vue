@@ -28,22 +28,22 @@
         </div>
 
         <div>
-          <span class="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+          <span class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5">
             <span>{{ formattedName.first }}</span>
             <span class="text-indigo-400 font-medium">{{ formattedName.rest }}</span>
           </span>
-          <span class="block text-[10px] font-medium uppercase tracking-wider text-slate-400 truncate max-w-[180px] sm:max-w-none">
+          <span class="block text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-slate-400 truncate max-w-[150px] sm:max-w-none">
             {{ settings.siteSubtitle || 'Industrial Internship & Training' }}
           </span>
         </div>
       </NuxtLink>
 
       <!-- Desktop Nav -->
-      <nav class="hidden md:flex items-center gap-6 text-xs sm:text-sm font-medium text-slate-300">
+      <nav class="hidden md:flex items-center gap-5 lg:gap-6 text-xs sm:text-sm font-medium text-slate-300">
         <NuxtLink to="/#programs" class="hover:text-indigo-400 transition-colors">Programs</NuxtLink>
         <NuxtLink to="/#curriculum" class="hover:text-indigo-400 transition-colors">Curriculum</NuxtLink>
         <NuxtLink to="/synopsis" class="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 transition-colors">
-          <span>✨ AI Project Synopsis</span>
+          <span>✨ AI Synopsis</span>
           <span class="rounded bg-emerald-950 border border-emerald-800/60 px-1 py-0.2 text-[9px] uppercase font-bold text-emerald-400">Free</span>
         </NuxtLink>
         <NuxtLink to="/verify/PTA-CERT-2026-8941" class="hover:text-indigo-400 transition-colors flex items-center gap-1.5">
@@ -51,15 +51,15 @@
           Verify Cert
         </NuxtLink>
         <NuxtLink to="/portal" class="text-indigo-300 hover:text-white transition-colors bg-indigo-950/60 border border-indigo-800/50 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5">
-          <span>⚡ Portal Dashboard</span>
+          <span>⚡ Dashboard</span>
         </NuxtLink>
       </nav>
 
-      <!-- Auth Actions -->
+      <!-- Right Actions: Auth & Mobile Menu Trigger -->
       <div class="flex items-center gap-2 sm:gap-3">
         <!-- If Logged In -->
         <div v-if="user" class="flex items-center gap-2">
-          <!-- Profile & Settings Trigger -->
+          <!-- Profile Trigger -->
           <button
             @click="isProfileModalOpen = true"
             title="Edit Profile & Change Password"
@@ -69,7 +69,7 @@
               {{ (user.user_metadata?.full_name || user.email || 'U').charAt(0).toUpperCase() }}
             </div>
             <div class="text-left hidden sm:block">
-              <span class="block text-xs font-bold leading-tight">{{ user.user_metadata?.full_name || user.email?.split('@')[0] }}</span>
+              <span class="block text-xs font-bold leading-tight truncate max-w-[120px]">{{ user.user_metadata?.full_name || user.email?.split('@')[0] }}</span>
               <span class="block text-[9px] text-indigo-300 font-mono leading-none">
                 {{ user.email === 'extractionevolution@gmail.com' ? '👑 Super Admin' : (user.user_metadata?.role || 'Intern') }}
               </span>
@@ -77,7 +77,7 @@
             <span class="text-slate-400 text-[10px] hidden sm:inline">⚙️</span>
           </button>
 
-          <!-- Dashboard Link -->
+          <!-- Dashboard Link (Desktop) -->
           <NuxtLink
             to="/portal"
             class="hidden md:inline-flex rounded-xl bg-slate-900 border border-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
@@ -99,24 +99,82 @@
         <div v-else class="flex items-center gap-2">
           <button
             @click="$emit('open-auth')"
-            class="rounded-xl border border-slate-700/80 bg-slate-900/80 hover:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-200 transition-colors"
+            class="rounded-xl border border-slate-700/80 bg-slate-900/80 hover:bg-slate-800 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold text-slate-200 transition-colors"
           >
-            Sign In / Sign Up
+            Sign In
           </button>
           <button
             @click="$emit('open-enroll')"
-            class="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/25 hover:from-indigo-500 hover:to-sky-400 transition-all hover:scale-105 active:scale-95"
+            class="rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold text-white shadow-md shadow-indigo-600/25 hover:from-indigo-500 hover:to-sky-400 transition-all hover:scale-105 active:scale-95"
           >
             Apply Now
           </button>
         </div>
+
+        <!-- Mobile Menu Toggle Button (Hamburger) -->
+        <button
+          @click="isMobileNavOpen = !isMobileNavOpen"
+          class="md:hidden rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          title="Toggle Navigation"
+        >
+          <span v-if="!isMobileNavOpen" class="text-lg leading-none block">☰</span>
+          <span v-else class="text-lg leading-none block">✕</span>
+        </button>
       </div>
     </div>
+
+    <!-- Mobile Slide-Down Menu Drawer -->
+    <Transition name="expand">
+      <div
+        v-if="isMobileNavOpen"
+        class="md:hidden border-t border-slate-800/80 bg-slate-950/95 backdrop-blur-xl px-4 py-4 space-y-3"
+      >
+        <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+          <NuxtLink
+            to="/#programs"
+            @click="isMobileNavOpen = false"
+            class="rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-slate-300 hover:text-white hover:bg-slate-800"
+          >
+            📚 Programs
+          </NuxtLink>
+          <NuxtLink
+            to="/#curriculum"
+            @click="isMobileNavOpen = false"
+            class="rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-slate-300 hover:text-white hover:bg-slate-800"
+          >
+            🗺️ Curriculum
+          </NuxtLink>
+          <NuxtLink
+            to="/synopsis"
+            @click="isMobileNavOpen = false"
+            class="rounded-xl border border-emerald-900/60 bg-emerald-950/40 p-3 text-emerald-300 font-bold flex items-center justify-between"
+          >
+            <span>✨ AI Synopsis</span>
+            <span class="rounded bg-emerald-900 px-1.5 text-[9px]">Free</span>
+          </NuxtLink>
+          <NuxtLink
+            to="/verify/PTA-CERT-2026-8941"
+            @click="isMobileNavOpen = false"
+            class="rounded-xl border border-slate-800 bg-slate-900/80 p-3 text-slate-300 hover:text-white hover:bg-slate-800"
+          >
+            🔍 Verify Cert
+          </NuxtLink>
+        </div>
+
+        <NuxtLink
+          to="/portal"
+          @click="isMobileNavOpen = false"
+          class="block rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 p-3 text-center text-xs font-bold text-white shadow-md shadow-indigo-600/30"
+        >
+          ⚡ Open Dashboard Workspace →
+        </NuxtLink>
+      </div>
+    </Transition>
   </header>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteSettings } from '~/composables/useSiteSettings'
 
@@ -124,6 +182,7 @@ defineEmits(['open-enroll', 'open-auth'])
 
 const { user, isProfileModalOpen, initAuth, signOut } = useAuth()
 const { settings, initSettings } = useSiteSettings()
+const isMobileNavOpen = ref(false)
 
 onMounted(() => {
   initAuth()
@@ -163,3 +222,15 @@ const logoTextGradient = computed(() => {
   return map[color] || map.indigo
 })
 </script>
+
+<style scoped>
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.25s ease-out;
+}
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+</style>

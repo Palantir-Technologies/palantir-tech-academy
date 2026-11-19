@@ -28,3 +28,4 @@ export default defineEventHandler(async (event) => {
     return { success: true, message: 'Settings cached locally', local: true }
   }
 })
+
