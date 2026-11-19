@@ -137,3 +137,4 @@ const printCertificate = () => {
   }
 }
 </script>
+

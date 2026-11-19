@@ -27,3 +27,4 @@ import { ref } from 'vue'
 
 const isEnrollModalOpen = ref(false)
 </script>
+
