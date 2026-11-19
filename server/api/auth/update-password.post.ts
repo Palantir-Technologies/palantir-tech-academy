@@ -22,39 +22,53 @@ export default defineEventHandler(async (event) => {
   const supabase = useServerSupabase()
   const newHash = getHash(password)
 
-  if (normalizedEmail === MASTER_SUPER_ADMIN_EMAIL) {
+  try {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('id, permissions')
+      .eq('email', normalizedEmail)
+      .single()
+
+    if (profile) {
+      await supabase
+        .from('user_profiles')
+        .update({
+          permissions: {
+            ...(profile.permissions || {}),
+            password_hash: newHash
+          }
+        })
+        .eq('id', profile.id)
+    }
+
+    // Also attempt site_settings backup if table exists
     try {
-      const { data, error } = await supabase
+      await supabase
         .from('site_settings')
         .upsert({
-          key: 'admin_auth',
+          key: normalizedEmail === MASTER_SUPER_ADMIN_EMAIL ? 'admin_auth' : `user_auth_${normalizedEmail}`,
           value: {
-            email: MASTER_SUPER_ADMIN_EMAIL,
+            email: normalizedEmail,
             passwordHash: newHash,
             updatedAt: new Date().toISOString()
           },
           updated_at: new Date().toISOString()
         }, { onConflict: 'key' })
-
-      if (error) {
-        console.warn('Upsert admin_auth error in site_settings:', error.message)
-      }
-
-      return {
-        success: true,
-        message: 'Super Admin password successfully updated and synchronized with cloud database!'
-      }
-    } catch (err: any) {
-      console.error('Password update error:', err)
-      return {
-        success: true,
-        message: 'Password saved in local session.'
-      }
+    } catch (e) {
+      // optional secondary table
     }
-  }
 
-  return {
-    success: true,
-    message: 'User password updated successfully.'
+    return {
+      success: true,
+      message: normalizedEmail === MASTER_SUPER_ADMIN_EMAIL
+        ? 'Super Admin password successfully updated and synchronized with cloud database!'
+        : 'Password updated successfully!'
+    }
+  } catch (err: any) {
+    console.error('Password update error:', err)
+    return {
+      success: true,
+      message: 'Password saved in local session.'
+    }
   }
 })

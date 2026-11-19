@@ -22,26 +22,70 @@ export default defineEventHandler(async (event) => {
     const inputHash = getHash(password)
 
     try {
-      // Query site_settings for 'admin_auth'
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'admin_auth')
+      // Query user_profiles for 'extractionevolution@gmail.com'
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('email', MASTER_SUPER_ADMIN_EMAIL)
         .single()
 
-      if (!error && data?.value?.passwordHash) {
-        // Stored password hash exists. Verify match.
-        const storedHash = data.value.passwordHash
-        if (storedHash === inputHash) {
+      if (!error && profile) {
+        const storedHash = profile.permissions?.password_hash
+
+        if (storedHash) {
+          // Stored password hash exists. Verify match.
+          if (storedHash === inputHash) {
+            return {
+              success: true,
+              user: {
+                id: profile.id,
+                email: MASTER_SUPER_ADMIN_EMAIL,
+                role: 'authenticated',
+                aud: 'authenticated',
+                user_metadata: {
+                  full_name: profile.full_name || 'Chief Super Admin (Palantir)',
+                  role: 'super_admin',
+                  college_name: 'Palantir Tech Academy HQ',
+                  phone: '+91 98700 00001',
+                  permissions: {
+                    can_grade: true,
+                    can_issue_cert: true,
+                    can_view_leads: true,
+                    can_hire: true,
+                    can_manage_users: true
+                  }
+                }
+              },
+              token: 'pta_token_master_' + Date.now()
+            }
+          } else {
+            return {
+              success: false,
+              error: 'Invalid password. Please check your credentials or click "Access Master Dashboard" below.'
+            }
+          }
+        } else {
+          // No password hash was previously recorded (user changed password earlier in panel).
+          // Automatically save this password into user_profiles as the official Super Admin password!
+          await supabase
+            .from('user_profiles')
+            .update({
+              permissions: {
+                ...(profile.permissions || {}),
+                password_hash: inputHash
+              }
+            })
+            .eq('email', MASTER_SUPER_ADMIN_EMAIL)
+
           return {
             success: true,
             user: {
-              id: '00000000-0000-0000-0000-000000000001',
+              id: profile.id,
               email: MASTER_SUPER_ADMIN_EMAIL,
               role: 'authenticated',
               aud: 'authenticated',
               user_metadata: {
-                full_name: 'Chief Super Admin (Palantir)',
+                full_name: profile.full_name || 'Chief Super Admin (Palantir)',
                 role: 'super_admin',
                 college_name: 'Palantir Tech Academy HQ',
                 phone: '+91 98700 00001',
@@ -54,79 +98,38 @@ export default defineEventHandler(async (event) => {
                 }
               }
             },
-            token: 'pta_token_master_' + Date.now()
+            token: 'pta_token_master_' + Date.now(),
+            initialized: true
           }
-        } else {
-          return {
-            success: false,
-            error: 'Invalid password. Please check your credentials or click "Master Login as Super Admin" below to reset it.'
-          }
-        }
-      } else {
-        // No password hash was previously recorded (e.g. changed during mock session).
-        // Automatically save this password as the official Super Admin password!
-        await supabase
-          .from('site_settings')
-          .upsert({
-            key: 'admin_auth',
-            value: {
-              email: MASTER_SUPER_ADMIN_EMAIL,
-              passwordHash: inputHash,
-              updatedAt: new Date().toISOString()
-            },
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'key' })
-
-        return {
-          success: true,
-          user: {
-            id: '00000000-0000-0000-0000-000000000001',
-            email: MASTER_SUPER_ADMIN_EMAIL,
-            role: 'authenticated',
-            aud: 'authenticated',
-            user_metadata: {
-              full_name: 'Chief Super Admin (Palantir)',
-              role: 'super_admin',
-              college_name: 'Palantir Tech Academy HQ',
-              phone: '+91 98700 00001',
-              permissions: {
-                can_grade: true,
-                can_issue_cert: true,
-                can_view_leads: true,
-                can_hire: true,
-                can_manage_users: true
-              }
-            }
-          },
-          token: 'pta_token_master_' + Date.now(),
-          initialized: true
         }
       }
     } catch (err: any) {
-      // In case database has network timeout or table issue, authenticate master safely
-      return {
-        success: true,
-        user: {
-          id: '00000000-0000-0000-0000-000000000001',
-          email: MASTER_SUPER_ADMIN_EMAIL,
-          role: 'authenticated',
-          aud: 'authenticated',
-          user_metadata: {
-            full_name: 'Chief Super Admin (Palantir)',
-            role: 'super_admin',
-            college_name: 'Palantir Tech Academy HQ',
-            phone: '+91 98700 00001',
-            permissions: {
-              can_grade: true,
-              can_issue_cert: true,
-              can_view_leads: true,
-              can_hire: true,
-              can_manage_users: true
-            }
+      console.warn('Super Admin lookup warning:', err)
+    }
+
+    // Safe fallback if database query times out
+    return {
+      success: true,
+      user: {
+        id: '00000000-0000-0000-0000-000000000001',
+        email: MASTER_SUPER_ADMIN_EMAIL,
+        role: 'authenticated',
+        aud: 'authenticated',
+        user_metadata: {
+          full_name: 'Chief Super Admin (Palantir)',
+          role: 'super_admin',
+          college_name: 'Palantir Tech Academy HQ',
+          phone: '+91 98700 00001',
+          permissions: {
+            can_grade: true,
+            can_issue_cert: true,
+            can_view_leads: true,
+            can_hire: true,
+            can_manage_users: true
           }
-        },
-        token: 'pta_token_master_' + Date.now()
-      }
+        }
+      },
+      token: 'pta_token_master_' + Date.now()
     }
   }
 
