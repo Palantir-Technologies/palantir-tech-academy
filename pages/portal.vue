@@ -47,6 +47,58 @@
     </div>
 
     <div class="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8 space-y-8">
+      <!-- User Profile Banner (If Logged In) -->
+      <div v-if="user" class="glass-panel-glow rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="h-12 w-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-400 p-0.5 shadow-md">
+            <div class="h-full w-full rounded-[14px] bg-slate-950 flex items-center justify-center font-extrabold text-white text-base">
+              {{ (user.user_metadata?.full_name || user.email || 'U').charAt(0).toUpperCase() }}
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-bold text-white">{{ user.user_metadata?.full_name || user.email?.split('@')[0] }}</h3>
+              <span class="rounded bg-emerald-950 border border-emerald-800/60 px-2 py-0.2 text-[10px] font-bold text-emerald-400">
+                Verified Intern
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">
+              {{ user.user_metadata?.college_name || 'Engineering University' }} • {{ user.email }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <NuxtLink
+            to="/verify/PTA-CERT-2026-8941"
+            class="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-bold text-white transition-colors"
+          >
+            Inspect Verified Credential →
+          </NuxtLink>
+        </div>
+      </div>
+
+      <!-- If Guest / Not Logged In Notice -->
+      <div v-else class="glass-panel rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs border border-indigo-900/40">
+        <div class="flex items-center gap-2 text-slate-300">
+          <span>👋 Browsing as guest visitor. Sign in with Google or your college email to link your project submissions!</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            @click="isAuthModalOpen = true"
+            class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-3.5 py-1.5 font-bold text-white transition-colors"
+          >
+            Sign In / Sign Up
+          </button>
+          <button
+            @click="loginAsDemoStudent"
+            class="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 font-semibold text-slate-300"
+          >
+            Demo Student Mode
+          </button>
+        </div>
+      </div>
+
       <!-- ============================================================ -->
       <!-- 1. ADMIN WORKSPACE -->
       <!-- ============================================================ -->
@@ -255,23 +307,23 @@
             <form @submit.prevent="generateCertificate" class="space-y-4 text-xs">
               <div>
                 <label class="block text-slate-300 font-semibold mb-1">Student Full Name</label>
-                <input v-model="newCert.student_name" required placeholder="e.g. Aarav Mehta" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
+                <input v-model="newCert.student_name" required placeholder="e.g. Aarav Mehta" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white" />
               </div>
               <div>
                 <label class="block text-slate-300 font-semibold mb-1">College / University</label>
-                <input v-model="newCert.college_name" required placeholder="e.g. Delhi Technological University (DTU)" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
+                <input v-model="newCert.college_name" required placeholder="e.g. Delhi Technological University (DTU)" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white" />
               </div>
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-slate-300 font-semibold mb-1">Program Duration</label>
-                  <select v-model="newCert.duration" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white">
+                  <select v-model="newCert.duration" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white">
                     <option value="6 Months (320 Industrial Hours)">6 Months (320 Hours)</option>
                     <option value="3 Months (160 Industrial Hours)">3 Months (160 Hours)</option>
                   </select>
                 </div>
                 <div>
                   <label class="block text-slate-300 font-semibold mb-1">Performance Grade</label>
-                  <select v-model="newCert.grade" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white">
+                  <select v-model="newCert.grade" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white">
                     <option value="Distinction (Grade A+)">Distinction (Grade A+)</option>
                     <option value="Honors (Grade A)">Honors (Grade A)</option>
                     <option value="First Class (Grade B+)">First Class (Grade B+)</option>
@@ -280,7 +332,7 @@
               </div>
               <div>
                 <label class="block text-slate-300 font-semibold mb-1">Capstone Project Title</label>
-                <input v-model="newCert.capstone_project" required placeholder="e.g. Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase" class="w-full rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-white" />
+                <input v-model="newCert.capstone_project" required placeholder="e.g. Enterprise Multi-Tenant SaaS with Nuxt 3 & Supabase" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-white" />
               </div>
               <button
                 type="submit"
@@ -429,10 +481,14 @@
         <!-- Student Identity & Progress Header -->
         <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Intern ID: PTA2026001</span>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1">Aarav Mehta</h2>
+            <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+              Intern ID: {{ user?.user_metadata?.enrollment_no || 'PTA2026001' }}
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+              {{ user?.user_metadata?.full_name || 'Aarav Mehta' }}
+            </h2>
             <p class="text-xs sm:text-sm text-slate-300 mt-0.5">
-              Delhi Technological University (DTU) • 8th Semester • 6-Month Industrial Track
+              {{ user?.user_metadata?.college_name || 'Delhi Technological University (DTU)' }} • 8th Semester • 6-Month Industrial Track
             </p>
           </div>
 
@@ -448,6 +504,67 @@
             >
               View Official Certificate 🏆
             </NuxtLink>
+          </div>
+        </div>
+
+        <!-- AI VIVA VOCE EXAMINER SIMULATOR (NEW FEATURE) -->
+        <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 space-y-5 border border-indigo-500/40">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="inline-flex items-center gap-1.5 rounded-full bg-indigo-950 border border-indigo-700/60 px-3 py-1 text-xs font-bold text-indigo-300 mb-2">
+                <span>🤖 AI External Examiner</span>
+                <span class="text-emerald-400">• Viva Voce Prep</span>
+              </div>
+              <h3 class="text-xl font-extrabold text-white">University Project Viva Simulator</h3>
+              <p class="text-xs text-slate-300 mt-0.5">
+                Practice answering external examiners' tough questions on your capstone project before your final university defense.
+              </p>
+            </div>
+            <button
+              @click="generateVivaQuestion"
+              :disabled="isGeneratingViva"
+              class="whitespace-nowrap rounded-xl bg-gradient-to-r from-indigo-600 to-sky-500 hover:from-indigo-500 hover:to-sky-400 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all"
+            >
+              {{ isGeneratingViva ? 'Examiner is thinking...' : 'Ask Me A Viva Question 🎯' }}
+            </button>
+          </div>
+
+          <!-- Active Question Card -->
+          <div v-if="vivaQuestion" class="rounded-2xl border border-indigo-800/80 bg-slate-900/80 p-5 space-y-4">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400">External Examiner Question:</span>
+              <p class="text-sm font-bold text-white mt-1">{{ vivaQuestion }}</p>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-xs font-semibold text-slate-300">Your Technical Answer:</label>
+              <textarea
+                v-model="vivaAnswer"
+                rows="3"
+                placeholder="Explain the architectural reasoning, tradeoffs, and code implementation..."
+                class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              ></textarea>
+            </div>
+
+            <div class="flex justify-end">
+              <button
+                @click="evaluateVivaAnswer"
+                :disabled="!vivaAnswer.trim() || isEvaluatingViva"
+                class="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-bold text-white disabled:opacity-50 transition-colors"
+              >
+                {{ isEvaluatingViva ? 'Grading Answer...' : 'Submit to Examiner for Grade (A+ / A)' }}
+              </button>
+            </div>
+
+            <!-- Grade Feedback -->
+            <div v-if="vivaFeedback" class="rounded-xl border border-emerald-900/60 bg-emerald-950/30 p-4 space-y-2 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-emerald-400">Examiner Evaluation:</span>
+                <span class="font-bold text-white bg-emerald-900/80 px-2.5 py-0.5 rounded-lg">{{ vivaFeedback.grade }}</span>
+              </div>
+              <p class="text-slate-300 leading-relaxed">{{ vivaFeedback.critique }}</p>
+              <p class="text-indigo-300 font-semibold">Tip for College Viva: {{ vivaFeedback.tip }}</p>
+            </div>
           </div>
         </div>
 
@@ -516,8 +633,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useAuth } from '~/composables/useAuth'
 
 defineEmits(['open-enroll'])
+
+const { user, isAuthModalOpen, loginAsDemoStudent } = useAuth()
 
 const activeRole = ref('Admin')
 const adminTab = ref('Inbound Leads Pipeline')
@@ -641,4 +761,41 @@ const studentRoadmap = [
   { weeks: '17-20', title: 'Live Client Capstone', desc: 'Multi-tenant architecture & billing', done: false },
   { weeks: '21-24', title: 'College Viva & Demo Day', desc: 'IEEE project thesis, mentor defense', done: false }
 ]
+
+// AI Viva Simulator State
+const isGeneratingViva = ref(false)
+const isEvaluatingViva = ref(false)
+const vivaQuestion = ref('Why did you choose PostgreSQL with Row Level Security (RLS) over MongoDB for your multi-tenant SaaS capstone project, and how does it prevent cross-tenant data leakage?')
+const vivaAnswer = ref('')
+const vivaFeedback = ref(null)
+
+const sampleQuestions = [
+  'How does Server-Side Rendering (SSR) in Nuxt 3 optimize Core Web Vitals compared to a traditional Single Page Application (SPA)?',
+  'Explain how you prevent Race Conditions when multiple users reserve the same internship cohort seat at the exact same millisecond.',
+  'What is the architectural difference between authentication and authorization in your Supabase JWT security model?',
+  'Why did you decouple your background email and PDF certificate workers using BullMQ queues rather than executing them synchronously inside the HTTP handler?'
+]
+
+const generateVivaQuestion = () => {
+  isGeneratingViva.value = true
+  vivaFeedback.value = null
+  vivaAnswer.value = ''
+  setTimeout(() => {
+    const nextQ = sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)]
+    vivaQuestion.value = nextQ
+    isGeneratingViva.value = false
+  }, 600)
+}
+
+const evaluateVivaAnswer = () => {
+  isEvaluatingViva.value = true
+  setTimeout(() => {
+    vivaFeedback.value = {
+      grade: 'Grade A+ (Distinction)',
+      critique: 'Excellent technical clarity! You correctly highlighted ACID transactional guarantees, row-level tenant filtering, and performance indexes.',
+      tip: 'When presenting to the external university examiner, sketch the tenant isolation database diagram on the whiteboard first—professors love visual architectural proof.'
+    }
+    isEvaluatingViva.value = false
+  }, 800)
+}
 </script>

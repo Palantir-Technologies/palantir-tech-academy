@@ -196,6 +196,11 @@
           Claim Group Discount
         </button>
       </div>
+
+      <!-- Interactive Merit Scholarship & Fee Calculator -->
+      <div class="mt-14">
+        <ScholarshipCalculator @open-enroll="$emit('open-enroll')" />
+      </div>
     </section>
 
     <!-- ==================== INTERACTIVE SYLLABUS EXPLORER ==================== -->

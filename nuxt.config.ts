@@ -15,8 +15,8 @@ export default defineNuxtConfig({
     
     // Public keys exposed to client
     public: {
-      supabaseUrl: process.env.SUPABASE_URL || 'https://mock-palantir-academy.supabase.co',
-      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || 'mock-anon-key'
+      supabaseUrl: process.env.SUPABASE_URL || 'https://higduwwlrbcumjzwrjyc.supabase.co',
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || 'sb_publishable_2jFqDM121fG3N8PIMmfdaA_7ejneVxd'
     }
   },
 

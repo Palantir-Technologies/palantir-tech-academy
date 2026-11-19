@@ -1,11 +1,17 @@
 <template>
   <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-    <!-- Navigation Bar -->
-    <Navbar @open-enroll="isEnrollModalOpen = true" />
+    <!-- Navigation Bar with Auth State -->
+    <Navbar
+      @open-enroll="isEnrollModalOpen = true"
+      @open-auth="isAuthModalOpen = true"
+    />
 
     <!-- Main Page Router View -->
     <main class="flex-1">
-      <NuxtPage @open-enroll="isEnrollModalOpen = true" />
+      <NuxtPage
+        @open-enroll="isEnrollModalOpen = true"
+        @open-auth="isAuthModalOpen = true"
+      />
     </main>
 
     <!-- Global Footer -->
@@ -19,12 +25,20 @@
       :isOpen="isEnrollModalOpen"
       @close="isEnrollModalOpen = false"
     />
+
+    <!-- Student Auth Modal (Google & Email/Password) -->
+    <AuthModal />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useAuth } from '~/composables/useAuth'
 
 const isEnrollModalOpen = ref(false)
-</script>
+const { isAuthModalOpen, initAuth } = useAuth()
 
+onMounted(() => {
+  initAuth()
+})
+</script>
