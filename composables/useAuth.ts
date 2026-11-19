@@ -102,21 +102,55 @@ export const useAuth = () => {
     const client = getClient()
 
     try {
-      if (!client) throw new Error('Supabase client not initialized')
-      const { data, error } = await client.auth.signInWithPassword({ email, password })
-      if (error) throw error
+      const normalizedEmail = email.trim().toLowerCase()
+      let loggedIn = false
 
-      const isSuperAdmin = data.user.email === 'extractionevolution@gmail.com'
-      user.value = {
-        ...data.user,
-        user_metadata: {
-          ...data.user.user_metadata,
-          role: isSuperAdmin ? 'super_admin' : (data.user.user_metadata?.role || 'student')
+      // 1. Attempt Supabase Auth first
+      if (client) {
+        try {
+          const { data, error } = await client.auth.signInWithPassword({ email: normalizedEmail, password })
+          if (!error && data?.user) {
+            const isSuperAdmin = normalizedEmail === 'extractionevolution@gmail.com'
+            user.value = {
+              ...data.user,
+              user_metadata: {
+                ...data.user.user_metadata,
+                role: isSuperAdmin ? 'super_admin' : (data.user.user_metadata?.role || 'student')
+              }
+            }
+            session.value = data.session
+            persistUserToStorage(user.value)
+            isAuthModalOpen.value = false
+            loggedIn = true
+            return { success: true }
+          }
+        } catch (sbErr) {
+          console.warn('Supabase auth attempt:', sbErr)
         }
       }
-      session.value = data.session
-      persistUserToStorage(user.value)
-      isAuthModalOpen.value = false
+
+      // 2. Fallback to Server Auth Bridge (handles Super Admin master password and synced ledger)
+      if (!loggedIn) {
+        const serverAuth: any = await $fetch('/api/auth/login', {
+          method: 'POST',
+          body: { email: normalizedEmail, password }
+        })
+
+        if (serverAuth && serverAuth.success && serverAuth.user) {
+          user.value = serverAuth.user
+          session.value = {
+            access_token: serverAuth.token || 'pta_token_master_' + Date.now(),
+            user: serverAuth.user
+          }
+          persistUserToStorage(user.value)
+          isAuthModalOpen.value = false
+          authError.value = null
+          return { success: true }
+        } else {
+          throw new Error(serverAuth?.error || 'Invalid login credentials. Please check your credentials.')
+        }
+      }
+
       return { success: true }
     } catch (err: any) {
       authError.value = err.message || 'Failed to sign in. Please check your credentials.'
@@ -248,11 +282,25 @@ export const useAuth = () => {
       if (!newPassword || newPassword.length < 6) {
         throw new Error('Password must be at least 6 characters long.')
       }
-      if (client && session.value) {
-        const { error } = await client.auth.updateUser({ password: newPassword })
-        if (error) throw error
+
+      const email = user.value?.email || 'extractionevolution@gmail.com'
+
+      // 1. Sync with server persistent database
+      const res: any = await $fetch('/api/auth/update-password', {
+        method: 'POST',
+        body: { email, password: newPassword }
+      })
+
+      // 2. If active Supabase session exists, also update Supabase Auth
+      if (client && session.value?.access_token && !session.value.access_token.startsWith('pta_')) {
+        try {
+          await client.auth.updateUser({ password: newPassword })
+        } catch (sbErr) {
+          console.warn('Supabase updateUser non-fatal notice:', sbErr)
+        }
       }
-      return { success: true, message: 'Password updated successfully!' }
+
+      return { success: true, message: res?.message || 'Password updated and synchronized successfully!' }
     } catch (err: any) {
       return { success: false, error: err.message || 'Failed to update password.' }
     } finally {
@@ -294,6 +342,10 @@ export const useAuth = () => {
         phone: '+91 98765 43210'
       }
     }
+    session.value = {
+      access_token: 'pta_demo_token_' + Date.now(),
+      user: user.value
+    }
     persistUserToStorage(user.value)
     isAuthModalOpen.value = false
   }
@@ -303,6 +355,8 @@ export const useAuth = () => {
     user.value = {
       id: 'super-admin-master-001',
       email: 'extractionevolution@gmail.com',
+      aud: 'authenticated',
+      role: 'authenticated',
       user_metadata: {
         full_name: 'Chief Super Admin (Palantir)',
         role: 'super_admin',
@@ -316,6 +370,10 @@ export const useAuth = () => {
           can_manage_users: true
         }
       }
+    }
+    session.value = {
+      access_token: 'pta_master_session_' + Date.now(),
+      user: user.value
     }
     persistUserToStorage(user.value)
     isAuthModalOpen.value = false

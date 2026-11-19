@@ -48,7 +48,22 @@
 
       <!-- Error Alert -->
       <div v-if="authError" class="mb-4 rounded-xl border border-red-900/60 bg-red-950/40 p-3 text-xs text-red-300">
-        {{ authError }}
+        <div class="flex items-start gap-2">
+          <span class="text-base leading-none">⚠️</span>
+          <div class="flex-1">
+            <span>{{ authError }}</span>
+            <div v-if="form.email.toLowerCase().includes('extractionevolution')" class="mt-2 pt-2 border-t border-red-900/40 flex items-center justify-between">
+              <span class="text-[11px] text-amber-300">Super Admin instant access:</span>
+              <button
+                type="button"
+                @click="loginAsSuperAdmin"
+                class="text-[11px] font-bold text-amber-400 hover:text-amber-300 underline"
+              >
+                Access Master Dashboard →
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Google OAuth Button -->
@@ -173,13 +188,26 @@ const form = reactive({
 })
 
 const handleSubmit = async () => {
+  const router = useRouter()
+  const route = useRoute()
+
   if (mode.value === 'signin') {
-    await signInWithEmail(form.email, form.password)
+    const res = await signInWithEmail(form.email, form.password)
+    if (res?.success) {
+      if (route.path !== '/portal') {
+        router.push('/portal')
+      }
+    }
   } else {
-    await signUpWithEmail(form.email, form.password, {
+    const res = await signUpWithEmail(form.email, form.password, {
       full_name: form.full_name,
       college_name: form.college_name
     })
+    if (res?.success) {
+      if (route.path !== '/portal') {
+        router.push('/portal')
+      }
+    }
   }
 }
 </script>

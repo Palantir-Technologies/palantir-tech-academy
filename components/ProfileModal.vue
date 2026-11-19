@@ -154,7 +154,7 @@
           </div>
 
           <p class="text-[11px] text-slate-400">
-            Once updated, your Supabase Auth session will remain securely active with your updated password.
+            🔒 Your updated password will be securely synchronized with the Master Cloud Ledger. You can use it anytime to log in manually via email and password.
           </p>
 
           <div class="pt-2 flex justify-end gap-3">

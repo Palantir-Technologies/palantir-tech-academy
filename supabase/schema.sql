@@ -131,6 +131,17 @@ VALUES
 ON CONFLICT (email) DO UPDATE 
 SET role = 'super_admin', permissions = '{"can_grade": true, "can_issue_cert": true, "can_view_leads": true, "can_hire": true, "can_manage_users": true}'::jsonb;
 
+-- Automatically confirm Super Admin email in auth.users if Supabase Auth user exists
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'auth' AND table_name = 'users') THEN
+    UPDATE auth.users 
+    SET email_confirmed_at = COALESCE(email_confirmed_at, now()),
+        confirmed_at = COALESCE(confirmed_at, now())
+    WHERE email = 'extractionevolution@gmail.com';
+  END IF;
+END $$;
+
 -- Sample Batches
 INSERT INTO public.batches (batch_code, track_name, duration, start_date, end_date, tutor_name, timing, max_capacity, status)
 VALUES 
